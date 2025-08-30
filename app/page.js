@@ -680,7 +680,13 @@ export default function Home() {
 
                             {(isOpen || isLoadingItem) && (
                               <div className="px-4">
-                                <div className="border-t border-[#e6e6e6] py-4">
+                                <div
+                                  className={
+                                    hasContent && !isLoadingItem
+                                      ? "border-t border-[#e6e6e6] py-4"
+                                      : ""
+                                  }
+                                >
                                   {renderAccordionContent(item)}
                                 </div>
                               </div>
