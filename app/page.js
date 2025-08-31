@@ -161,7 +161,7 @@ export default function Home() {
   useEffect(() => {
     const fetchRateLimit = async () => {
       try {
-        const response = await fetch("/api/translate-error", {
+        const response = await fetch("/api/analyze-status", {
           method: "GET",
         });
 
@@ -250,7 +250,7 @@ export default function Home() {
       }
 
       // Make actual API call
-      const response = await fetch("/api/translate-error", {
+      const response = await fetch("/api/analyze-error", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -291,15 +291,15 @@ export default function Home() {
 
         // Update rate limit info from API response
         if (data.rateLimit) {
-          setRateLimit({
+          setRateLimit((prev) => ({
             remaining: data.rateLimit.remaining,
-            maxRequests: rateLimit.maxRequests,
+            maxRequests: prev.maxRequests,
             resetTime: data.rateLimit.resetTime
               ? new Date(data.rateLimit.resetTime)
-              : rateLimit.resetTime,
+              : prev.resetTime,
             canAnalyze: data.rateLimit.remaining > 0,
             loading: false,
-          });
+          }));
         }
 
         // Auto-open first accordion
@@ -469,7 +469,7 @@ export default function Home() {
             </span>
           </h1>
           <p className="text-[#0E2E28]/70 text-sm sm:text-base leading-relaxed tracking-wide max-w-2xl mx-auto">
-            Instantly translate errors • Clear explanations • Actionable fixes
+            Instantly analyze errors • Clear explanations • Actionable fixes
           </p>
 
           {/* Rate limit indicator */}
@@ -729,7 +729,7 @@ export default function Home() {
                   ) : (
                     <>
                       <Search className="w-4 h-4" />
-                      Translate Error
+                      Analyze Error
                     </>
                   )}
                 </button>
@@ -834,7 +834,7 @@ export default function Home() {
                       })}
                     </div>
 
-                    {/* Analysis Button */}
+                    {/* New Analysis Button */}
                     {analysis && !isLoading && (
                       <div className="text-center pt-4">
                         <button
