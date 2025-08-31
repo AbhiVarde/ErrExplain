@@ -1,7 +1,7 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { Client, Databases, ID, Query } from "node-appwrite";
+import { Client, Databases, ID } from "node-appwrite";
 import { NextResponse } from "next/server";
 import { getClientId, isValidError } from "../utils";
 
@@ -150,24 +150,15 @@ export async function POST(request) {
     }
 
     // Call LLM
+    const rawPrompt = process.env.ERROR_ANALYSIS_PROMPT;
+    const finalPrompt = rawPrompt
+      .replace("{{language}}", language)
+      .replace("{{errorMessage}}", errorMessage);
+
     const { object: analysis } = await generateObject({
       model: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
       schema: errorAnalysisSchema,
-      prompt: `
-        Analyze this ${language} error message and provide a comprehensive breakdown:
-        
-        Error: "${errorMessage}"
-        
-        Please provide:
-        1. A clear, plain English explanation of what this error means
-        2. The most likely causes (2-4 common reasons this happens)
-        3. Step-by-step solutions to fix it (be specific and actionable)
-        4. Severity level of this error
-        5. Error category
-        
-        Make your response beginner-friendly but technically accurate. Focus on practical, actionable advice.
-        Only respond if this is actually an error message, not general text.
-      `,
+      prompt: finalPrompt,
     });
 
     // Save to Appwrite
@@ -197,6 +188,9 @@ export async function POST(request) {
             explanation: analysis.explanation,
             causes: analysis.causes,
             solutions: analysis.solutions,
+            clientId: clientId,
+            severity: analysis.severity,
+            category: analysis.category,
           }
         );
 
