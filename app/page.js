@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  XCircle,
 } from "lucide-react";
 
 const languages = [
@@ -76,8 +77,13 @@ export default function Home() {
   const [openAccordions, setOpenAccordions] = useState(new Set());
   const [loadingSteps, setLoadingSteps] = useState(new Set());
   const [validationError, setValidationError] = useState("");
-  const [remainingUses, setRemainingUses] = useState(5);
-  const [resetTime, setResetTime] = useState(null);
+  const [rateLimit, setRateLimit] = useState({
+    remaining: 5,
+    maxRequests: 5,
+    resetTime: null,
+    canAnalyze: true,
+    loading: true,
+  });
 
   const validateErrorMessage = (text) => {
     if (!text || text.trim().length < 10) return false;
@@ -151,6 +157,36 @@ export default function Home() {
     return errorScore >= 2;
   };
 
+  // Fetch rate limit on component mount
+  useEffect(() => {
+    const fetchRateLimit = async () => {
+      try {
+        const response = await fetch("/api/translate-error", {
+          method: "GET",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setRateLimit({
+            remaining: data.remaining,
+            maxRequests: data.maxRequests,
+            resetTime: data.resetTime ? new Date(data.resetTime) : null,
+            canAnalyze: data.canAnalyze,
+            loading: false,
+          });
+        } else {
+          // Fallback if API fails
+          setRateLimit((prev) => ({ ...prev, loading: false }));
+        }
+      } catch (error) {
+        console.error("Error fetching rate limit:", error);
+        setRateLimit((prev) => ({ ...prev, loading: false }));
+      }
+    };
+
+    fetchRateLimit();
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isDropdownOpen && !event.target.closest(".relative")) {
@@ -192,7 +228,7 @@ export default function Home() {
       return;
     }
 
-    if (remainingUses <= 0) {
+    if (!rateLimit.canAnalyze) {
       setValidationError(
         "Daily limit reached (5 analyses per day). Please try again tomorrow."
       );
@@ -230,10 +266,14 @@ export default function Home() {
       if (!response.ok) {
         if (response.status === 429) {
           setValidationError(data.error);
-          setRemainingUses(0);
-          if (data.resetTime) {
-            setResetTime(new Date(data.resetTime));
-          }
+          setRateLimit((prev) => ({
+            ...prev,
+            remaining: data.remaining || 0,
+            canAnalyze: false,
+            resetTime: data.resetTime
+              ? new Date(data.resetTime)
+              : prev.resetTime,
+          }));
         } else if (response.status === 400 && data.suggestion) {
           setValidationError(`${data.error}\n\n${data.suggestion}`);
         } else {
@@ -249,12 +289,17 @@ export default function Home() {
         setAnalysis(data.analysis);
         setLoadingSteps(new Set());
 
-        // Update rate limit info
+        // Update rate limit info from API response
         if (data.rateLimit) {
-          setRemainingUses(data.rateLimit.remaining);
-          if (data.rateLimit.resetTime) {
-            setResetTime(new Date(data.rateLimit.resetTime));
-          }
+          setRateLimit({
+            remaining: data.rateLimit.remaining,
+            maxRequests: rateLimit.maxRequests,
+            resetTime: data.rateLimit.resetTime
+              ? new Date(data.rateLimit.resetTime)
+              : rateLimit.resetTime,
+            canAnalyze: data.rateLimit.remaining > 0,
+            loading: false,
+          });
         }
 
         // Auto-open first accordion
@@ -291,6 +336,8 @@ export default function Home() {
   };
 
   const insertSampleError = () => {
+    if (!rateLimit.canAnalyze) return;
+
     const sampleErrors = [
       "TypeError: Cannot read property 'map' of undefined",
       "ReferenceError: document is not defined",
@@ -394,6 +441,22 @@ export default function Home() {
     }
   };
 
+  const formatResetTime = (resetTime) => {
+    if (!resetTime) return "";
+    const now = new Date();
+    const timeDiff = resetTime.getTime() - now.getTime();
+
+    if (timeDiff <= 0) return "shortly";
+
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
   return (
     <div className="px-4 py-10">
       <div className="max-w-3xl mx-auto">
@@ -410,13 +473,32 @@ export default function Home() {
           </p>
 
           {/* Rate limit indicator */}
-          <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-600">
-            <Clock className="w-3 h-3" />
-            <span>{remainingUses} analyses remaining today</span>
-            {resetTime && (
-              <span className="text-gray-500">
-                • Resets at {resetTime.toLocaleTimeString()}
-              </span>
+          <div className="flex items-center justify-center gap-2 mt-3 text-xs">
+            {rateLimit.loading ? (
+              <div className="text-gray-500">
+                <Loader2 className="w-3 h-3 animate-spin inline mr-1" />
+                Loading...
+              </div>
+            ) : rateLimit.canAnalyze ? (
+              <div className="text-gray-600">
+                <Clock className="w-3 h-3 inline mr-1" />
+                <span>{rateLimit.remaining} analyses remaining today</span>
+                {rateLimit.resetTime && (
+                  <span className="text-gray-500">
+                    • Resets in {formatResetTime(rateLimit.resetTime)}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="text-red-600">
+                <XCircle className="w-3 h-3 inline mr-1" />
+                <span>Daily limit reached</span>
+                {rateLimit.resetTime && (
+                  <span className="text-gray-500">
+                    • Resets in {formatResetTime(rateLimit.resetTime)}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -465,6 +547,30 @@ export default function Home() {
           <div className="p-4 md:p-6">
             {activeTab === "input" && (
               <div className="space-y-6">
+                {/* Rate limit warning if limit reached */}
+                {!rateLimit.canAnalyze && !rateLimit.loading && (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+                    <div className="flex items-start gap-3">
+                      <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h3 className="text-sm font-medium text-red-800 mb-1">
+                          Daily Limit Reached
+                        </h3>
+                        <p className="text-sm text-red-700 leading-relaxed">
+                          You've used all 5 error analyses for today.
+                          {rateLimit.resetTime && (
+                            <span>
+                              {" "}
+                              Your limit will reset in{" "}
+                              {formatResetTime(rateLimit.resetTime)}.
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Language Selector */}
                 <div>
                   <label className="block font-medium text-sm text-[#0E2E28] mb-2">
@@ -472,8 +578,16 @@ export default function Home() {
                   </label>
                   <div className="relative">
                     <button
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="w-full px-3 py-3 text-sm rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-[#CDFA8A] focus:outline-none transition flex items-center justify-between text-left cursor-pointer hover:border-gray-400"
+                      onClick={() =>
+                        rateLimit.canAnalyze &&
+                        setIsDropdownOpen(!isDropdownOpen)
+                      }
+                      disabled={!rateLimit.canAnalyze}
+                      className={`w-full px-3 py-3 text-sm rounded-xl border bg-white focus:ring-2 focus:ring-[#CDFA8A] focus:outline-none transition flex items-center justify-between text-left ${
+                        rateLimit.canAnalyze
+                          ? "border-gray-300 cursor-pointer hover:border-gray-400"
+                          : "border-gray-200 cursor-not-allowed bg-gray-50 text-gray-400"
+                      }`}
                     >
                       <span>{selectedLanguage}</span>
                       <ChevronDown
@@ -483,7 +597,7 @@ export default function Home() {
                       />
                     </button>
 
-                    {isDropdownOpen && (
+                    {isDropdownOpen && rateLimit.canAnalyze && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg z-10 max-h-50 overflow-y-auto">
                         {languages.map((lang) => (
                           <button
@@ -512,21 +626,32 @@ export default function Home() {
                     <label className="block font-medium text-sm text-[#0E2E28]">
                       Error Message
                     </label>
-                    <button
-                      onClick={insertSampleError}
-                      className="text-xs text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors duration-200 font-medium"
-                    >
-                      Try sample error
-                    </button>
+                    {rateLimit.canAnalyze && (
+                      <button
+                        onClick={insertSampleError}
+                        className="text-xs text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors duration-200 font-medium"
+                      >
+                        Try sample error
+                      </button>
+                    )}
                   </div>
                   <textarea
                     value={errorMessage}
-                    onChange={(e) => setErrorMessage(e.target.value)}
-                    placeholder={`Paste your error message here...\n\nExample:\nTypeError: Cannot read property 'map' of undefined\nReferenceError: document is not defined`}
+                    onChange={(e) =>
+                      rateLimit.canAnalyze && setErrorMessage(e.target.value)
+                    }
+                    disabled={!rateLimit.canAnalyze}
+                    placeholder={
+                      rateLimit.canAnalyze
+                        ? `Paste your error message here...\n\nExample:\nTypeError: Cannot read property 'map' of undefined\nReferenceError: document is not defined`
+                        : "Daily limit reached. Please try again tomorrow."
+                    }
                     rows={8}
                     maxLength={1000}
                     className={`w-full px-3 py-3 text-sm rounded-xl border resize-none focus:ring-2 focus:ring-[#CDFA8A] focus:outline-none transition ${
-                      validationError
+                      !rateLimit.canAnalyze
+                        ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                        : validationError
                         ? "border-red-300 bg-red-50"
                         : errorMessage && validateErrorMessage(errorMessage)
                         ? "border-green-300 bg-green-50"
@@ -538,12 +663,14 @@ export default function Home() {
                       <span className="text-gray-500">
                         {errorMessage.length}/1000
                       </span>
-                      {errorMessage && validateErrorMessage(errorMessage) && (
-                        <div className="flex items-center gap-1 text-green-600">
-                          <CheckCircle className="w-3 h-3" />
-                          <span>Valid error detected</span>
-                        </div>
-                      )}
+                      {rateLimit.canAnalyze &&
+                        errorMessage &&
+                        validateErrorMessage(errorMessage) && (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>Valid error detected</span>
+                          </div>
+                        )}
                     </div>
                     {errorMessage.length > 900 && (
                       <span className="text-orange-600">Approaching limit</span>
@@ -562,7 +689,7 @@ export default function Home() {
                   )}
                 </div>
 
-                {!errorMessage && (
+                {!errorMessage && rateLimit.canAnalyze && (
                   <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
                     <div className="text-xs text-blue-700">
                       <strong>💡 Tip:</strong> Paste error messages with
@@ -579,14 +706,25 @@ export default function Home() {
                     !errorMessage.trim() ||
                     !!validationError ||
                     isLoading ||
-                    remainingUses <= 0
+                    !rateLimit.canAnalyze
                   }
-                  className="w-full bg-[#CDFA8A] hover:bg-[#B8E678] text-[#0E2E28] disabled:opacity-50 disabled:cursor-not-allowed font-medium py-2 px-4 cursor-pointer rounded-xl flex items-center justify-center gap-2 transition transform hover:scale-[1.02] active:scale-[0.98]"
+                  className={`w-full font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition transform ${
+                    rateLimit.canAnalyze &&
+                    !validationError &&
+                    errorMessage.trim()
+                      ? "bg-[#CDFA8A] hover:bg-[#B8E678] text-[#0E2E28] cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Analyzing...
+                    </>
+                  ) : !rateLimit.canAnalyze ? (
+                    <>
+                      <XCircle className="w-4 h-4" />
+                      Daily Limit Reached
                     </>
                   ) : (
                     <>

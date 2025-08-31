@@ -61,13 +61,11 @@ const errorPatterns = [
   /stack trace|stacktrace/i,
 ];
 
-// Rate limiting storage (in-memory for simplicity)
+// Rate limiting storage (in-memory for fallback)
 const rateLimitStore = new Map();
 
 function isValidError(text) {
   if (!text || text.trim().length < 10) return false;
-
-  // Check if text contains error patterns
   return errorPatterns.some((pattern) => pattern.test(text));
 }
 
@@ -78,7 +76,11 @@ function getClientId(request) {
   const baseId = forwarded || realIp || "unknown";
   const fingerprint = Buffer.from(userAgent).toString("base64").slice(0, 8);
 
-  return `${baseId}_${fingerprint}`;
+  // Create a valid Appwrite document ID (max 36 chars, alphanumeric + underscore)
+  const rawId = `${baseId}_${fingerprint}`;
+  const cleanId = rawId.replace(/[^a-zA-Z0-9_]/g, "_").substring(0, 36);
+
+  return cleanId.startsWith("_") ? `u${cleanId.substring(1)}` : cleanId;
 }
 
 async function checkRateLimit(clientId) {
@@ -91,7 +93,8 @@ async function checkRateLimit(clientId) {
     process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT &&
     process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID &&
     process.env.APPWRITE_API_KEY &&
-    process.env.NEXT_PUBLIC_DATABASE_ID
+    process.env.NEXT_PUBLIC_DATABASE_ID &&
+    process.env.NEXT_PUBLIC_RATE_LIMIT_COLLECTION_ID
   ) {
     try {
       const client = new Client()
@@ -106,7 +109,7 @@ async function checkRateLimit(clientId) {
       try {
         rateLimitDoc = await databases.getDocument(
           process.env.NEXT_PUBLIC_DATABASE_ID,
-          "rate_limits",
+          process.env.NEXT_PUBLIC_RATE_LIMIT_COLLECTION_ID,
           clientId
         );
       } catch (error) {
@@ -114,7 +117,7 @@ async function checkRateLimit(clientId) {
           // Create new rate limit document
           rateLimitDoc = await databases.createDocument(
             process.env.NEXT_PUBLIC_DATABASE_ID,
-            "rate_limits",
+            process.env.NEXT_PUBLIC_RATE_LIMIT_COLLECTION_ID,
             clientId,
             {
               clientId: clientId,
@@ -143,7 +146,7 @@ async function checkRateLimit(clientId) {
       recentRequests.push(now);
       await databases.updateDocument(
         process.env.NEXT_PUBLIC_DATABASE_ID,
-        "rate_limits",
+        process.env.NEXT_PUBLIC_RATE_LIMIT_COLLECTION_ID,
         clientId,
         {
           requests: recentRequests,
@@ -164,7 +167,7 @@ async function checkRateLimit(clientId) {
     }
   }
 
-  // Fallback to in-memory rate limiting 
+  // Fallback to in-memory rate limiting
   if (!rateLimitStore.has(clientId)) {
     rateLimitStore.set(clientId, []);
   }
@@ -189,6 +192,88 @@ async function checkRateLimit(clientId) {
     remaining: maxRequests - recentRequests.length,
     resetTime: new Date(recentRequests[0] + windowMs),
   };
+}
+
+// GET endpoint to check rate limits
+export async function GET(request) {
+  try {
+    const clientId = getClientId(request);
+    const now = Date.now();
+    const windowMs = 24 * 60 * 60 * 1000; // 24 hours
+    const maxRequests = 5;
+
+    // Check Appwrite first
+    if (
+      process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT &&
+      process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID &&
+      process.env.APPWRITE_API_KEY &&
+      process.env.NEXT_PUBLIC_DATABASE_ID &&
+      process.env.NEXT_PUBLIC_RATE_LIMIT_COLLECTION_ID
+    ) {
+      try {
+        const client = new Client()
+          .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
+          .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID)
+          .setKey(process.env.APPWRITE_API_KEY);
+
+        const databases = new Databases(client);
+
+        const rateLimitDoc = await databases.getDocument(
+          process.env.NEXT_PUBLIC_DATABASE_ID,
+          process.env.NEXT_PUBLIC_RATE_LIMIT_COLLECTION_ID,
+          clientId
+        );
+
+        const requests = rateLimitDoc.requests || [];
+        const recentRequests = requests.filter((time) => now - time < windowMs);
+        const remaining = Math.max(0, maxRequests - recentRequests.length);
+
+        return NextResponse.json({
+          remaining,
+          maxRequests,
+          resetTime:
+            recentRequests.length > 0
+              ? new Date(recentRequests[0] + windowMs)
+              : new Date(now + windowMs),
+          canAnalyze: remaining > 0,
+        });
+      } catch (error) {
+        if (error.code === 404) {
+          // No rate limit record exists yet
+          return NextResponse.json({
+            remaining: maxRequests,
+            maxRequests,
+            resetTime: new Date(now + windowMs),
+            canAnalyze: true,
+          });
+        }
+        console.error("Error checking rate limits:", error);
+      }
+    }
+
+    // Fallback to in-memory check
+    const requests = rateLimitStore.get(clientId) || [];
+    const recentRequests = requests.filter((time) => now - time < windowMs);
+    const remaining = Math.max(0, maxRequests - recentRequests.length);
+
+    return NextResponse.json({
+      remaining,
+      maxRequests,
+      resetTime:
+        recentRequests.length > 0
+          ? new Date(recentRequests[0] + windowMs)
+          : new Date(now + windowMs),
+      canAnalyze: remaining > 0,
+    });
+  } catch (error) {
+    console.error("Rate limit check error:", error);
+    return NextResponse.json({
+      remaining: 5,
+      maxRequests: 5,
+      resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      canAnalyze: true,
+    });
+  }
 }
 
 export async function POST(request) {
@@ -223,9 +308,9 @@ export async function POST(request) {
       );
     }
 
-    // Rate limiting
+    // Rate limiting - Added await here
     const clientId = getClientId(request);
-    const rateLimit = checkRateLimit(clientId);
+    const rateLimit = await checkRateLimit(clientId);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
