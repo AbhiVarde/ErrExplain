@@ -1,0 +1,526 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Clock,
+  TrendingUp,
+  AlertCircle,
+  Code,
+  Calendar,
+  BarChart3,
+  FileText,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  History,
+} from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+} from "recharts";
+
+export default function HistoryDashboard({ onSelectError }) {
+  const [history, setHistory] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    languages: {},
+    severity: { low: 0, medium: 0, high: 0 },
+    categories: {},
+    timeline: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [expandedItems, setExpandedItems] = useState(new Set());
+  const [error, setError] = useState(null);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/user-history");
+      const data = await response.json();
+
+      if (data.success) {
+        setHistory(data.history || []);
+        setStats(
+          data.stats || {
+            total: 0,
+            languages: {},
+            severity: { low: 0, medium: 0, high: 0 },
+            categories: {},
+            timeline: [],
+          }
+        );
+        setError(null);
+      } else {
+        setError("Failed to load history");
+      }
+    } catch (err) {
+      console.error("Error fetching history:", err);
+      setError("Failed to load history");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const getSeverityColor = (severity) => {
+    switch (severity) {
+      case "low":
+        return "text-green-600 bg-green-50 border-green-200";
+      case "medium":
+        return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      case "high":
+        return "text-red-600 bg-red-50 border-red-200";
+      default:
+        return "text-gray-600 bg-gray-50 border-gray-200";
+    }
+  };
+
+  const toggleExpanded = (id) => {
+    setExpandedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  // Prepare chart data
+  const severityData = [
+    { name: "Low", value: stats.severity.low, fill: "#4ade80" },
+    { name: "Medium", value: stats.severity.medium, fill: "#facc15" },
+    { name: "High", value: stats.severity.high, fill: "#f43f5e" },
+  ];
+
+  const languageData = Object.entries(stats.languages)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([name, value]) => ({ name, value }));
+
+  const timelineData = stats.timeline.map((day) => ({
+    ...day,
+    date: day.label,
+  }));
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="p-4 rounded-xl bg-white border border-gray-200 animate-pulse"
+          >
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-6 bg-gray-200 rounded"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Load Failed</h3>
+        <p className="text-gray-600 mb-4 text-sm">{error}</p>
+        <button
+          onClick={fetchHistory}
+          className="bg-[#CDFA8A] hover:bg-[#B8E678] text-[#0E2E28] font-medium py-2 px-4 rounded-lg flex items-center gap-2 mx-auto transition text-sm"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (history.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <History className="w-12 h-12 text-[#0E2E28] mx-auto mb-3" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No History</h3>
+        <p className="text-gray-600 text-sm">
+          Analyzed errors will appear here
+        </p>
+      </div>
+    );
+  }
+
+  const topLanguages = Object.entries(stats.languages)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+
+  return (
+    <div className="space-y-4">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        {[
+          {
+            label: "Total",
+            icon: FileText,
+            value: stats.total,
+            color: "bg-blue-100 text-blue-600",
+          },
+          {
+            label: "This Week",
+            icon: TrendingUp,
+            value: stats.timeline.reduce((sum, day) => sum + day.count, 0),
+            color: "bg-green-100 text-green-600",
+          },
+          {
+            label: "Top Lang",
+            icon: Code,
+            value: topLanguages[0] ? topLanguages[0][0] : "None",
+            color: "bg-purple-100 text-purple-600",
+          },
+          {
+            label: "Critical",
+            icon: AlertCircle,
+            value: stats.severity.high,
+            color: "bg-red-100 text-red-600",
+          },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className="p-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`p-1 rounded-sm ${item.color}`}>
+                <item.icon className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-gray-700">{item.label}</span>
+            </div>
+            <div className="text-gray-900 truncate">{item.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        {/* Timeline Chart */}
+        {timelineData.length > 0 && (
+          <div className="p-4 rounded-xl bg-white border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Activity
+            </h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={timelineData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#6b7280" }}
+                />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "white",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    padding: "4px 8px",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={{ fill: "#10b981", r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Severity Distribution */}
+        {severityData.some((d) => d.value > 0) && (
+          <div className="p-4 rounded-xl bg-white border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500" />
+              Severity
+            </h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={severityData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={60}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {severityData.map((entry, index) => {
+                    // severity based colors
+                    let color = "#94a3b8"; // default gray
+                    if (entry.name === "Critical") color = "#ef4444";
+                    else if (entry.name === "High") color = "#f97316";
+                    else if (entry.name === "Medium") color = "#eab308";
+                    else if (entry.name === "Low") color = "#22c55e"; // green
+                    else if (entry.name === "Info") color = "#3b82f6"; // blue
+
+                    return <Cell key={`cell-${index}`} fill={color} />;
+                  })}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "white",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    padding: "4px 8px",
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Language Distribution */}
+      {languageData.length > 0 && (
+        <div className="p-4 rounded-xl bg-white border border-gray-200">
+          <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+            <Code className="w-4 h-4" />
+            Languages
+          </h3>
+
+          {/* Scroll container */}
+          <div className="w-full overflow-x-auto">
+            <div
+              className="min-w-[400px] lg:min-w-full"
+              style={{ height: 260 }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={languageData}
+                  margin={{ top: 10, right: 10, left: -30, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: "#374151" }}
+                    interval={0}
+                    angle={-30}
+                    textAnchor="end"
+                    height={50}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#374151" }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      padding: "4px 8px",
+                    }}
+                  />
+                  <Bar dataKey="value" barSize={28} radius={[6, 6, 0, 0]}>
+                    {languageData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          [
+                            "#3b82f6", // Blue
+                            "#10b981", // Green
+                            "#f59e0b", // Amber
+                            "#ef4444", // Red
+                            "#8b5cf6", // Violet
+                            "#06b6d4", // Cyan
+                            "#ec4899", // Pink
+                          ][index % 7]
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error History */}
+      <div className="p-4 rounded-xl bg-white border border-gray-200">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Recent Errors
+          </h3>
+          <button
+            onClick={fetchHistory}
+            disabled={loading}
+            className="p-1.5 rounded hover:bg-gray-100 cursor-pointer transition"
+          >
+            <RefreshCw
+              className={`w-4 h-4 text-gray-600 ${
+                loading ? "animate-spin" : ""
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {history.map((item) => {
+            const isExpanded = expandedItems.has(item.id);
+
+            return (
+              <div
+                key={item.id}
+                className="rounded-lg border border-gray-200 bg-white transition overflow-hidden"
+              >
+                {/* Header */}
+                <div className="p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-xs font-medium text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
+                          {item.language}
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-xs font-medium border ${getSeverityColor(
+                            item.severity
+                          )}`}
+                        >
+                          {item.severity}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {item.category}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-700 font-mono bg-white px-2 py-1 rounded leading-tight line-clamp-2">
+                        {item.errorMessage}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatDate(item.timestamp)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => toggleExpanded(item.id)}
+                      className="p-1 rounded hover:bg-gray-200 transition cursor-pointer flex-shrink-0"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-gray-600" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-600" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded Content */}
+                {isExpanded && item.analysis && (
+                  <div className="px-3 pb-3 border-t border-gray-200">
+                    <div className="pt-3 space-y-3">
+                      {/* Explanation */}
+                      <div className="bg-blue-50 p-2.5 rounded-lg">
+                        <h4 className="font-medium text-blue-900 mb-1.5 flex items-center gap-2 text-xs">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                          Explanation
+                        </h4>
+                        <p className="text-xs text-blue-800 leading-relaxed">
+                          {item.analysis.explanation}
+                        </p>
+                      </div>
+
+                      {/* Causes */}
+                      {item.analysis.causes?.length > 0 && (
+                        <div className="bg-orange-50 p-2.5 rounded-lg">
+                          <h4 className="font-medium text-orange-900 mb-1.5 flex items-center gap-2 text-xs">
+                            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                            Causes
+                          </h4>
+                          <ul className="space-y-1">
+                            {item.analysis.causes.map((cause, i) => (
+                              <li
+                                key={i}
+                                className="text-xs text-orange-800 flex gap-2"
+                              >
+                                <span className="text-orange-600 font-medium flex-shrink-0">
+                                  {i + 1}.
+                                </span>
+                                <span className="leading-relaxed">{cause}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Solutions */}
+                      {item.analysis.solutions?.length > 0 && (
+                        <div className="bg-green-50 p-2.5 rounded-lg">
+                          <h4 className="font-medium text-green-900 mb-1.5 flex items-center gap-2 text-xs">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            Solutions
+                          </h4>
+                          <ul className="space-y-1">
+                            {item.analysis.solutions.map((solution, i) => (
+                              <li
+                                key={i}
+                                className="text-xs text-green-800 flex gap-2"
+                              >
+                                <span className="text-green-600 font-medium flex-shrink-0">
+                                  {i + 1}.
+                                </span>
+                                <span className="leading-relaxed">
+                                  {solution}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

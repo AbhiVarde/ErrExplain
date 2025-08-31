@@ -16,7 +16,9 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  History,
 } from "lucide-react";
+import HistoryDashboard from "../components/HistoryDashboard";
 
 const languages = [
   "JavaScript",
@@ -397,6 +399,23 @@ export default function Home() {
     setValidationError("");
   };
 
+  // Handle loading error from history
+  const handleHistoryErrorSelect = ({
+    errorMessage,
+    language,
+    existingAnalysis,
+  }) => {
+    setErrorMessage(errorMessage);
+    setSelectedLanguage(language);
+    if (existingAnalysis) {
+      setAnalysis(existingAnalysis);
+      setActiveTab("output");
+      setOpenAccordions(new Set(["explanation"]));
+    } else {
+      setActiveTab("input");
+    }
+  };
+
   const renderAccordionContent = (item) => {
     if (!analysis) return null;
 
@@ -482,7 +501,7 @@ export default function Home() {
             ) : rateLimit.canAnalyze ? (
               <div className="text-gray-600">
                 <Clock className="w-3 h-3 inline mr-1" />
-                <span>{rateLimit.remaining} analyses remaining today</span>
+                <span>{rateLimit.remaining} analyses remaining today </span>
                 {rateLimit.resetTime && (
                   <span className="text-gray-500">
                     • Resets in {formatResetTime(rateLimit.resetTime)}
@@ -492,7 +511,7 @@ export default function Home() {
             ) : (
               <div className="text-red-600">
                 <XCircle className="w-3 h-3 inline mr-1" />
-                <span>Daily limit reached</span>
+                <span>Daily limit reached </span>
                 {rateLimit.resetTime && (
                   <span className="text-gray-500">
                     • Resets in {formatResetTime(rateLimit.resetTime)}
@@ -539,6 +558,20 @@ export default function Home() {
                 <BarChart3 className="w-4 h-4 transition-transform duration-200 ease-in-out group-hover:scale-110" />
                 <span className="hidden sm:inline">Analysis Results</span>
                 <span className="sm:hidden">Results</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("history")}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 ease-in-out
+        ${
+          activeTab === "history"
+            ? "bg-[#0E2E28] text-[#CDFA8A]"
+            : "text-gray-600 hover:text-[#0E2E28] hover:bg-gray-100 cursor-pointer"
+        }`}
+              >
+                <History className="w-4 h-4 transition-transform duration-200 ease-in-out group-hover:scale-110" />
+                <span className="hidden sm:inline">Error History</span>
+                <span className="sm:hidden">History</span>
               </button>
             </div>
           </div>
@@ -629,7 +662,7 @@ export default function Home() {
                     {rateLimit.canAnalyze && (
                       <button
                         onClick={insertSampleError}
-                        className="text-xs text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors duration-200 font-medium"
+                        className="text-sm text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors duration-200 font-medium"
                       >
                         Try sample error
                       </button>
@@ -690,11 +723,21 @@ export default function Home() {
                 </div>
 
                 {!errorMessage && rateLimit.canAnalyze && (
-                  <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                    <div className="text-xs text-blue-700">
-                      <strong>💡 Tip:</strong> Paste error messages with
-                      keywords like "Error:", "Exception:", or stack traces for
-                      best results.
+                  <div className="mt-4 p-3 rounded-xl border border-blue-200 bg-blue-50">
+                    <div className="flex items-start gap-2 text-sm text-blue-700">
+                      <span className="mt-0.5 text-base">💡</span>
+                      <div>
+                        <span className="font-semibold">Tip:</span> Paste error
+                        messages containing keywords like{" "}
+                        <code className="px-1 py-0.5 bg-blue-100 rounded text-blue-800">
+                          Error:
+                        </code>
+                        ,{" "}
+                        <code className="px-1 py-0.5 bg-blue-100 rounded text-blue-800">
+                          Exception:
+                        </code>
+                        , or full stack traces for best results.
+                      </div>
                     </div>
                   </div>
                 )}
@@ -750,7 +793,7 @@ export default function Home() {
                           <div className="flex items-center gap-2 text-sm text-[#0E2E28]/70">
                             <FileCode2 className="w-4 h-4" />
                             <span>{analysis.language}</span> •{" "}
-                            <span>{analysis.category} Error</span>
+                            <span>{analysis.category}</span>
                           </div>
                         </div>
                         <span
@@ -820,9 +863,7 @@ export default function Home() {
                               <div className="px-4">
                                 <div
                                   className={
-                                    hasContent && !isLoadingItem
-                                      ? "border-t border-[#e6e6e6] py-4"
-                                      : ""
+                                    hasContent && !isLoadingItem ? "py-4" : ""
                                   }
                                 >
                                   {renderAccordionContent(item)}
@@ -867,6 +908,10 @@ export default function Home() {
                   </div>
                 )}
               </div>
+            )}
+
+            {activeTab === "history" && (
+              <HistoryDashboard onSelectError={handleHistoryErrorSelect} />
             )}
           </div>
         </div>
