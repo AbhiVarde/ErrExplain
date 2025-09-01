@@ -28,3 +28,24 @@ body::before {
   z-index: -1;
   pointer-events: none;
 }
+
+/* Infinite marquee animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  display: inline-block;
+  min-width: 100%;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee.paused {
+  animation-play-state: paused;
+}

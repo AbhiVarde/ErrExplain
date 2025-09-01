@@ -3,16 +3,16 @@ import Image from "next/image";
 export default function Footer() {
   return (
     <footer className="w-full bg-transparent">
-      <div className="max-w-4xl mx-auto py-4 flex flex-col items-center text-center gap-2 px-3">
+      <div className="max-w-4xl mx-auto py-6 flex flex-col items-center text-center gap-2 px-3 text-sm text-[#0E2E28]">
         {/* Built with */}
-        <div className="flex flex-wrap items-center justify-center gap-2 font-medium text-[#0E2E28] text-sm">
+        <div className="flex flex-wrap items-center justify-center gap-2 font-medium">
           <span>Built with</span>
 
           <a
             href="https://ai-sdk.dev/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:opacity-80 transition text-[#0E2E28]"
+            className="flex items-center gap-1 hover:opacity-80 transition"
           >
             <Image
               src="https://vercel.com/favicon.ico"
@@ -29,7 +29,7 @@ export default function Footer() {
             href="https://appwrite.io"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:opacity-80 transition text-[#0E2E28]"
+            className="flex items-center gap-1 hover:opacity-80 transition"
           >
             <Image
               src="https://appwrite.io/images/logos/logo.svg"
@@ -45,14 +45,14 @@ export default function Footer() {
             href="http://abhivarde.in/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#0E2E28] hover:underline"
+            className="hover:underline"
           >
             abhivarde.in
           </a>
         </div>
 
         {/* Share / Sponsor */}
-        <div className="text-sm text-[#0E2E28]">
+        <div>
           If you like it, <span>share on X (Twitter)</span> ·{" "}
           <a
             href="https://github.com/sponsors/AbhiVarde"

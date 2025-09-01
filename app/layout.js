@@ -18,8 +18,9 @@ export default function RootLayout({ children }) {
       <body className="font-sans antialiased transition-colors duration-300 text-gray-900">
         <div className="min-h-screen flex flex-col">
           <Header />
-          <main className="flex-1 flex justify-center pt-12">
-            <div className="w-full max-w-4xl px-2sm:px-4">{children}</div>
+          {/* Adjusted top padding for header + announcement bar */}
+          <main className="flex-1 flex justify-center pt-16 md:pt-20">
+            <div className="w-full max-w-4xl px-2 sm:px-4">{children}</div>
           </main>
           <Footer />
         </div>
