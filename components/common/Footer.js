@@ -52,13 +52,16 @@ export default function Footer() {
         </div>
 
         {/* Share / Sponsor */}
-        <div>
-          If you like it, <span>share on X (Twitter)</span> ·{" "}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-center sm:text-left">
+          <div>
+            If you like it, <span>share on X (Twitter)</span>
+          </div>
+          <span className="hidden sm:inline">·</span>
           <a
             href="https://github.com/sponsors/AbhiVarde"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:opacity-80"
+            className="underline mt-1 sm:mt-0 underline-offset-4 hover:opacity-80"
           >
             sponsor on GitHub
           </a>
