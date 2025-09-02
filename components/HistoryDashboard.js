@@ -7,7 +7,6 @@ import {
   AlertCircle,
   Code,
   Calendar,
-  BarChart3,
   FileText,
   RefreshCw,
   ChevronDown,
@@ -28,6 +27,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import ShareButton from "./SharedButton";
 
 export default function HistoryDashboard({ onSelectError }) {
   const [history, setHistory] = useState([]);
@@ -431,16 +431,21 @@ export default function HistoryDashboard({ onSelectError }) {
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => toggleExpanded(item.id)}
-                      className="p-1 rounded hover:bg-gray-200 transition cursor-pointer flex-shrink-0"
-                    >
-                      {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-gray-600" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-600" />
-                      )}
-                    </button>
+
+                    {/*  Actions (Share + Expand) */}
+                    <div className="flex items-center gap-1">
+                      <ShareButton errorId={item.id} variant="icon" />
+                      <button
+                        onClick={() => toggleExpanded(item.id)}
+                        className="p-1 rounded hover:bg-gray-200 transition cursor-pointer flex-shrink-0"
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-600" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-600" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 

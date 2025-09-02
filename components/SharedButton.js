@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Share2, Copy, Check, Loader2, ExternalLink } from "lucide-react";
 
-export default function ShareButton({ errorId, errorMessage, language }) {
+export default function ShareButton({ errorId, variant = "default" }) {
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -21,9 +21,7 @@ export default function ShareButton({ errorId, errorMessage, language }) {
     try {
       const response = await fetch("/api/share-error", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ errorId }),
       });
 
@@ -31,8 +29,7 @@ export default function ShareButton({ errorId, errorMessage, language }) {
 
       if (response.ok && data.success) {
         setShareUrl(data.shareUrl);
-        // Auto-copy to clipboard
-        await copyToClipboard(data.shareUrl);
+        await copyToClipboard(data.shareUrl); // auto-copy
       } else {
         setError(data.error || "Failed to create share link");
       }
@@ -49,8 +46,7 @@ export default function ShareButton({ errorId, errorMessage, language }) {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Fallback for older browsers
+    } catch {
       const textArea = document.createElement("textarea");
       textArea.value = text;
       document.body.appendChild(textArea);
@@ -67,13 +63,40 @@ export default function ShareButton({ errorId, errorMessage, language }) {
   };
 
   const openInNewTab = () => {
-    if (shareUrl) {
-      window.open(shareUrl, "_blank");
-    }
+    if (shareUrl) window.open(shareUrl, "_blank");
   };
 
-  // If already shared, show the share link controls
+  // If already shared, show copy + open controls
   if (shareUrl) {
+    if (variant === "icon") {
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => copyToClipboard(shareUrl)}
+            className={`p-1.5 cursor-pointer rounded hover:bg-gray-200 transition ${
+              copied ? "text-green-600" : "text-gray-600"
+            }`}
+            title={copied ? "Copied!" : "Copy Link"}
+          >
+            {copied ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </button>
+
+          <button
+            onClick={openInNewTab}
+            className="p-1.5 cursor-pointer rounded hover:bg-gray-200 transition text-gray-600"
+            title="Open in new tab"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </button>
+        </div>
+      );
+    }
+
+    // default
     return (
       <div className="flex gap-2">
         <button
@@ -105,23 +128,44 @@ export default function ShareButton({ errorId, errorMessage, language }) {
 
   return (
     <>
-      <button
-        onClick={handleShare}
-        disabled={isSharing}
-        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-      >
-        {isSharing ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Creating Link...
-          </>
-        ) : (
-          <>
-            <Share2 className="w-4 h-4" />
-            Share
-          </>
-        )}
-      </button>
+      {variant === "icon" ? (
+        <button
+          onClick={handleShare}
+          disabled={isSharing}
+          className={`p-1.5 rounded hover:bg-gray-200 transition ${
+            isSharing ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+          }`}
+          title={copied ? "Copied!" : "Share"}
+        >
+          {isSharing ? (
+            <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
+          ) : copied ? (
+            <Check className="w-4 h-4 text-green-600" />
+          ) : (
+            <Share2 className="w-4 h-4 text-gray-600" />
+          )}
+        </button>
+      ) : (
+        <button
+          onClick={handleShare}
+          disabled={isSharing}
+          className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium border border-gray-300 rounded-xl hover:bg-gray-50 transition ${
+            isSharing ? "cursor-not-allowed" : "cursor-pointer"
+          }`}
+        >
+          {isSharing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Creating Link...
+            </>
+          ) : (
+            <>
+              <Share2 className="w-4 h-4" />
+              Share
+            </>
+          )}
+        </button>
+      )}
 
       {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
     </>

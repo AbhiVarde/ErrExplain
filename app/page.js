@@ -886,13 +886,7 @@ export default function Home() {
                           <RefreshCcw className="w-4 h-4" />
                           Analyze Another Error
                         </button>
-                        {analysis.id && (
-                          <ShareButton
-                            errorId={analysis.id}
-                            errorMessage={errorMessage}
-                            language={selectedLanguage}
-                          />
-                        )}
+                        {analysis.id && <ShareButton errorId={analysis.id} />}
                       </div>
                     )}
                   </>
