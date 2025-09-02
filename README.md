@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# ErrExplain
+
+**Turn cryptic errors into plain English.** Instantly analyze programming errors with AI-powered explanations, root cause analysis, and actionable solutions.
+
+## Key Features
+
+- **🔍 Smart Error Analysis** - Paste any error message and get structured explanations
+- **🎯 Root Cause Detection** - Understand what actually caused the error
+- **🛠️ Actionable Solutions** - Step-by-step fixes that actually work
+- **🔗 Collaborative Sharing** - Generate shareable links for team debugging
+- **📊 Error History** - Track and analyze your debugging patterns
+- **⚡ Rate Limiting** - Fair usage with 5 free analyses per day
+- **📱 Mobile Friendly** - Works seamlessly across all devices
+
+## Why ErrExplain?
+
+| Feature | ErrExplain | ChatGPT/Claude | Stack Overflow |
+|---------|------------|----------------|----------------|
+| **Error Focus** | ✅ Specialized for errors | ❌ General purpose | ❌ Manual search |
+| **Structured Output** | ✅ Meaning → Causes → Fixes | ❌ Raw text response | ❌ Mixed quality answers |
+| **Memory & Analytics** | ✅ Dashboard with charts & insights | ❌ Limited conversation memory | ❌ No personal dashboard |
+| **Language Intelligence** | ✅ Top languages, severity tracking | ❌ No pattern recognition | ❌ No personal insights |
+
+## Tech Stack
+
+- **Frontend**: Next.js 15+, React 19, Tailwind CSS 4, clsx
+- **Backend**: Next.js API Routes, Node.js, node-appwrite
+- **Database**: Appwrite (NoSQL)
+- **AI**: Groq (Llama 4 Maverick)
+- **Vercel AI SDK**: ai, @ai-sdk/groq
+- **Validation**: Zod
+- **UI**: Sonner (toasts)
+- **Charts**: Recharts
+- **Icons**: Lucide React
+- **Deployment**: Appwrite Sites
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ and npm
+- Appwrite account and project
+- Groq API key
+
+### Quick Start
 
 ```bash
+# Clone repository
+git clone https://github.com/AbhiVarde/errexplain.git
+cd errexplain
+
+# Install dependencies
+npm install
+
+# Setup environment
+cp .env.example .env.local
+# Edit .env.local with your credentials
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and start analyzing errors.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Environment Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env.local` with these variables:
 
-## Learn More
+```env
+# Groq AI
+GROQ_API_KEY=your_groq_api_key
 
-To learn more about Next.js, take a look at the following resources:
+# Appwrite
+APPWRITE_API_KEY=your_appwrite_api_key
+NEXT_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
+NEXT_PUBLIC_APPWRITE_DATABASE_ID=your_database_id
+NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID=your_collection_id
+NEXT_PUBLIC_APPWRITE_RATE_LIMITS_COLLECTION_ID=your_rate_limits_collection_id
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# App Configuration
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Appwrite Collections Setup:**
 
-## Deploy on Vercel
+1. **error-submissions**: `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`
+2. **rate-limits**: `clientId`, `requests`, `lastReset`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+**Development Guidelines:**
+- Follow existing code patterns
+- Test error scenarios thoroughly
+- Maintain responsive design
+- Keep commits focused and descriptive
