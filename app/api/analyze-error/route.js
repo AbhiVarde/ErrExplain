@@ -195,7 +195,7 @@ export async function POST(request) {
         );
 
         documentId = document.$id;
-        console.log("Successfully saved to Appwrite:", documentId);
+        console.log("Successfully saved to Appwrite :)", documentId);
       } catch (dbError) {
         console.error("Appwrite save failed:", dbError);
         // Continue without failing the request
@@ -204,7 +204,13 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      analysis: { ...analysis, language, id: documentId },
+      analysis: {
+        ...analysis,
+        language,
+        id: documentId,
+        isShared: false,
+        shareId: null,
+      },
       rateLimit: {
         remaining: rateLimit.remaining,
         resetTime: rateLimit.resetTime,

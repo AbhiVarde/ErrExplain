@@ -3,9 +3,19 @@
 import { useState } from "react";
 import { Share2, Copy, Check, Loader2, ExternalLink } from "lucide-react";
 
-export default function ShareButton({ errorId, variant = "default" }) {
+export default function ShareButton({
+  errorId,
+  variant = "default",
+  isShared = false,
+  existingShareId = null,
+  onShareComplete,
+}) {
   const [isSharing, setIsSharing] = useState(false);
-  const [shareUrl, setShareUrl] = useState(null);
+  const [shareUrl, setShareUrl] = useState(
+    isShared && existingShareId
+      ? `${window.location.origin}/shared/${existingShareId}`
+      : null
+  );
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(null);
 
@@ -28,8 +38,18 @@ export default function ShareButton({ errorId, variant = "default" }) {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setShareUrl(data.shareUrl);
-        await copyToClipboard(data.shareUrl); // auto-copy
+        const newShareUrl = data.shareUrl;
+        setShareUrl(newShareUrl);
+
+        if (onShareComplete) {
+          onShareComplete({
+            shareId: data.shareId,
+            shareUrl: newShareUrl,
+            isShared: true,
+          });
+        }
+
+        await copyToClipboard(newShareUrl); // auto-copy
       } else {
         setError(data.error || "Failed to create share link");
       }

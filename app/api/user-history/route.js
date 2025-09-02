@@ -54,6 +54,8 @@ export async function GET(request) {
         category: doc.category || "Runtime Error",
         severity: doc.severity || "medium",
         timestamp: doc.$createdAt,
+        isShared: doc.isShared || false,
+        shareId: doc.shareId || null,
         analysis: {
           explanation: doc.explanation,
           causes: doc.causes || [],

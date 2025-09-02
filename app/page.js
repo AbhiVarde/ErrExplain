@@ -400,6 +400,14 @@ export default function Home() {
     setValidationError("");
   };
 
+  const handleShareComplete = (shareData) => {
+    setAnalysis((prevAnalysis) => ({
+      ...prevAnalysis,
+      isShared: shareData.isShared,
+      shareId: shareData.shareId,
+    }));
+  };
+
   // Handle loading error from history
   const handleHistoryErrorSelect = ({
     errorMessage,
@@ -886,7 +894,14 @@ export default function Home() {
                           <RefreshCcw className="w-4 h-4" />
                           Analyze Another Error
                         </button>
-                        {analysis.id && <ShareButton errorId={analysis.id} />}
+                        {analysis.id && (
+                          <ShareButton
+                            errorId={analysis.id}
+                            isShared={analysis.isShared}
+                            existingShareId={analysis.shareId}
+                            onShareComplete={handleShareComplete}
+                          />
+                        )}
                       </div>
                     )}
                   </>
