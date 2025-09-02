@@ -133,16 +133,9 @@ export default function HistoryDashboard({ onSelectError }) {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="p-4 rounded-xl bg-white border border-gray-200 animate-pulse"
-          >
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-6 bg-gray-200 rounded"></div>
-          </div>
-        ))}
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <RefreshCw className="w-6 h-6 text-gray-400 animate-spin mb-3" />
+        <p className="text-sm text-gray-600">Loading your history...</p>
       </div>
     );
   }

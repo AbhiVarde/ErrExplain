@@ -19,6 +19,7 @@ import {
   History,
 } from "lucide-react";
 import HistoryDashboard from "../components/HistoryDashboard";
+import ShareButton from "@/components/SharedButton";
 
 const languages = [
   "JavaScript",
@@ -826,7 +827,7 @@ export default function Home() {
                             <button
                               onClick={() => toggleAccordion(item.id)}
                               disabled={isDisabled}
-                              className="w-full px-4 py-2 flex items-center cursor-pointer justify-between text-left rounded-xl hover:bg-black/5 transition disabled:cursor-not-allowed"
+                              className="w-full p-2.5 flex items-center cursor-pointer justify-between text-left rounded-xl hover:bg-black/5 transition disabled:cursor-not-allowed"
                             >
                               <div className="flex items-center gap-3">
                                 <div
@@ -875,16 +876,23 @@ export default function Home() {
                       })}
                     </div>
 
-                    {/* New Analysis Button */}
+                    {/* Action Buttons */}
                     {analysis && !isLoading && (
-                      <div className="text-center pt-4">
+                      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 justify-center">
                         <button
                           onClick={handleNewAnalysis}
-                          className="bg-[#CDFA8A] hover:bg-[#B8E678] text-[#0E2E28] font-medium py-2 px-4 cursor-pointer rounded-xl flex items-center justify-center gap-2 text-sm mx-auto transition transform hover:scale-[1.02] active:scale-[0.98]"
+                          className="bg-[#CDFA8A] hover:bg-[#B8E678] text-[#0E2E28] font-medium py-2 px-4 cursor-pointer rounded-xl flex items-center justify-center gap-2 text-sm transition transform hover:scale-[1.02] active:scale-[0.98]"
                         >
                           <RefreshCcw className="w-4 h-4" />
                           Analyze Another Error
                         </button>
+                        {analysis.id && (
+                          <ShareButton
+                            errorId={analysis.id}
+                            errorMessage={errorMessage}
+                            language={selectedLanguage}
+                          />
+                        )}
                       </div>
                     )}
                   </>
