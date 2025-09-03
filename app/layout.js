@@ -4,28 +4,88 @@ import Footer from "../components/common/Footer";
 import { Toaster } from "sonner";
 
 export const metadata = {
-  title: "ErrExplain | Turn Cryptic Errors into Plain English",
+  title: {
+    default: "ErrExplain | Turn Cryptic Errors into Plain English",
+    template: "%s | ErrExplain",
+  },
   description:
     "Instantly translate complex error messages into understandable explanations with AI-powered solutions.",
-  keywords: "error translator, debugging, developer tools, AI, error messages",
-  authors: [{ name: "ErrExplain" }],
-  viewport: "width=device-width, initial-scale=1",
+  openGraph: {
+    title: "ErrExplain",
+    description:
+      "Instantly translate complex error messages into understandable explanations with AI-powered solutions.",
+    siteName: "ErrExplain",
+    url: "https://errexplain.appwrite.network",
+    type: "website",
+    images: [
+      {
+        url: "https://errexplain.appwrite.network/og-image.png",
+        width: 800,
+        height: 600,
+        alt: "ErrExplain - Turn Cryptic Errors into Plain English",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ErrExplain",
+    description:
+      "Instantly translate complex error messages into understandable explanations with AI-powered solutions.",
+    images: "https://errexplain.appwrite.network/og-image.png",
+  },
+  robots: "index,follow",
+  canonical: "https://errexplain.appwrite.network",
+  keywords:
+    "error translator, debugging, developer tools, AI, error messages, bug fixing, programming errors",
+  author: "ErrExplain",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="icon"
+          type="image/x-icon"
+          href="./favicon.ico"
+          sizes="32x32"
+        />
+        <meta name="description" content={metadata.description} />
+        <meta name="robots" content={metadata.robots} />
+        <meta name="twitter:card" content={metadata.twitter.card} />
+        <meta property="og:title" content={metadata.openGraph.title} />
+        <meta
+          property="og:description"
+          content={metadata.openGraph.description}
+        />
+        <meta property="og:url" content={metadata.openGraph.url} />
+        <meta property="og:image" content={metadata.openGraph.images[0].url} />
+        <meta
+          property="og:image:alt"
+          content={metadata.openGraph.images[0].alt}
+        />
+        <meta
+          property="og:image:width"
+          content={metadata.openGraph.images[0].width}
+        />
+        <meta
+          property="og:image:height"
+          content={metadata.openGraph.images[0].height}
+        />
+        <meta property="og:site_name" content={metadata.openGraph.siteName} />
+        <link rel="canonical" href={metadata.canonical} />
+        <meta name="keywords" content={metadata.keywords} />
+        <meta name="author" content={metadata.author} />
+      </head>
       <body className="font-sans antialiased transition-colors duration-300 text-gray-900">
         <div className="min-h-screen flex flex-col">
           <Header />
-          {/* Adjusted top padding for header + announcement bar */}
           <main className="flex-1 flex justify-center pt-16 md:pt-20">
             <div className="w-full max-w-4xl px-2 sm:px-4">{children}</div>
           </main>
           <Footer />
         </div>
 
-        {/* Sonner Toaster */}
         <Toaster
           position="top-center"
           richColors
