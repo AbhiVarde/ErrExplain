@@ -1,11 +1,10 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { Client, Databases, ID } from "node-appwrite";
+import { Client, Databases, ID, Query } from "node-appwrite";
 import { NextResponse } from "next/server";
 import { getClientId, isValidError } from "../utils";
 
-// Schema for structured AI output
 const errorAnalysisSchema = z.object({
   explanation: z.string(),
   causes: z.array(z.string()),
@@ -14,7 +13,7 @@ const errorAnalysisSchema = z.object({
   category: z.string(),
 });
 
-async function checkAppwriteRateLimit(clientId) {
+async function checkRateLimit(clientId) {
   try {
     const client = new Client()
       .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
@@ -22,76 +21,41 @@ async function checkAppwriteRateLimit(clientId) {
       .setKey(process.env.APPWRITE_API_KEY);
 
     const databases = new Databases(client);
-    const now = Date.now();
-    const windowMs = 24 * 60 * 60 * 1000; // 24 hours
-    const maxRequests = 5;
 
-    try {
-      // Try to get existing rate limit document
-      const rateLimitDoc = await databases.getDocument(
-        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
-        process.env.NEXT_PUBLIC_APPWRITE_RATE_LIMITS_COLLECTION_ID,
-        clientId
-      );
+    // Get today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
-      const requests = rateLimitDoc.requests || [];
-      const recentRequests = requests.filter((time) => now - time < windowMs);
-      const remaining = Math.max(0, maxRequests - recentRequests.length);
+    // Count submissions from this client today
+    const submissions = await databases.listDocuments(
+      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
+      process.env.NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID,
+      [
+        Query.equal("clientId", clientId),
+        Query.greaterThanEqual("$createdAt", today.toISOString()),
+        Query.lessThan("$createdAt", tomorrow.toISOString()),
+      ]
+    );
 
-      if (remaining === 0) {
-        return {
-          allowed: false,
-          remaining: 0,
-          resetTime: new Date(recentRequests[0] + windowMs),
-        };
-      }
+    const count = submissions.total;
+    const remaining = Math.max(0, 5 - count);
 
-      // Add current request
-      recentRequests.push(now);
-
-      // Update the document
-      await databases.updateDocument(
-        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
-        process.env.NEXT_PUBLIC_APPWRITE_RATE_LIMITS_COLLECTION_ID,
-        clientId,
-        {
-          requests: recentRequests,
-          lastReset: now,
-        }
-      );
-
-      return {
-        allowed: true,
-        remaining: maxRequests - recentRequests.length,
-        resetTime: new Date(recentRequests[0] + windowMs),
-      };
-    } catch (error) {
-      if (error.code === 404) {
-        // Document doesn't exist, create it
-        await databases.createDocument(
-          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
-          process.env.NEXT_PUBLIC_APPWRITE_RATE_LIMITS_COLLECTION_ID,
-          clientId,
-          {
-            clientId: clientId,
-            requests: [now],
-            lastReset: now,
-          }
-        );
-
-        return {
-          allowed: true,
-          remaining: maxRequests - 1,
-          resetTime: new Date(now + windowMs),
-        };
-      }
-      throw error;
-    }
+    return {
+      allowed: remaining > 0,
+      remaining: remaining,
+      resetTime: tomorrow,
+      count: count,
+    };
   } catch (error) {
-    console.error("Appwrite rate limit check failed:", error);
-    // Fall back to memory-based rate limiting
-    const { checkRateLimit } = await import("../utils");
-    return await checkRateLimit(clientId);
+    console.error("Rate limit check failed:", error);
+    return {
+      allowed: true,
+      remaining: 5,
+      resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      count: 0,
+    };
   }
 }
 
@@ -99,7 +63,6 @@ export async function POST(request) {
   try {
     const { errorMessage, language } = await request.json();
 
-    // Validate inputs
     if (!errorMessage || !language) {
       return NextResponse.json(
         { error: "Error message and language are required" },
@@ -125,14 +88,13 @@ export async function POST(request) {
       );
     }
 
-    // Rate limiting with Appwrite
     const clientId = getClientId(request);
-    const rateLimit = await checkAppwriteRateLimit(clientId);
+    const rateLimit = await checkRateLimit(clientId);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
-          error: "Daily limit reached (5 errors/day).",
+          error: `Daily limit reached (${rateLimit.count}/5 analyses used today).`,
           remaining: 0,
           resetTime: rateLimit.resetTime,
         },
@@ -140,7 +102,6 @@ export async function POST(request) {
       );
     }
 
-    // Check GROQ
     if (!process.env.GROQ_API_KEY) {
       console.error("Missing GROQ_API_KEY");
       return NextResponse.json(
@@ -149,7 +110,6 @@ export async function POST(request) {
       );
     }
 
-    // Call LLM
     const rawPrompt = process.env.ERROR_ANALYSIS_PROMPT;
     const finalPrompt = rawPrompt
       .replace("{{language}}", language)
@@ -161,45 +121,34 @@ export async function POST(request) {
       prompt: finalPrompt,
     });
 
-    // Save to Appwrite
     let documentId = null;
-    if (
-      process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT &&
-      process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID &&
-      process.env.APPWRITE_API_KEY &&
-      process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID &&
-      process.env.NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID
-    ) {
-      try {
-        const client = new Client()
-          .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
-          .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID)
-          .setKey(process.env.APPWRITE_API_KEY);
+    try {
+      const client = new Client()
+        .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
+        .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID)
+        .setKey(process.env.APPWRITE_API_KEY);
 
-        const databases = new Databases(client);
+      const databases = new Databases(client);
 
-        const document = await databases.createDocument(
-          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
-          process.env.NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID,
-          ID.unique(),
-          {
-            errorMessage: errorMessage.substring(0, 1000),
-            language: language.substring(0, 50),
-            explanation: analysis.explanation,
-            causes: analysis.causes,
-            solutions: analysis.solutions,
-            clientId: clientId,
-            severity: analysis.severity,
-            category: analysis.category,
-          }
-        );
+      const document = await databases.createDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
+        process.env.NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID,
+        ID.unique(),
+        {
+          errorMessage: errorMessage.substring(0, 1000),
+          language: language.substring(0, 50),
+          explanation: analysis.explanation,
+          causes: analysis.causes,
+          solutions: analysis.solutions,
+          clientId: clientId,
+          severity: analysis.severity,
+          category: analysis.category,
+        }
+      );
 
-        documentId = document.$id;
-        console.log("Successfully saved to Appwrite :)", documentId);
-      } catch (dbError) {
-        console.error("Appwrite save failed:", dbError);
-        // Continue without failing the request
-      }
+      documentId = document.$id;
+    } catch (dbError) {
+      console.error("Appwrite save failed:", dbError);
     }
 
     return NextResponse.json({
@@ -212,7 +161,7 @@ export async function POST(request) {
         shareId: null,
       },
       rateLimit: {
-        remaining: rateLimit.remaining,
+        remaining: rateLimit.remaining - 1,
         resetTime: rateLimit.resetTime,
       },
     });

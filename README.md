@@ -80,7 +80,6 @@ NEXT_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
 NEXT_PUBLIC_APPWRITE_DATABASE_ID=your_database_id
 NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID=your_collection_id
-NEXT_PUBLIC_APPWRITE_RATE_LIMITS_COLLECTION_ID=your_rate_limits_collection_id
 
 # App Configuration
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -89,8 +88,7 @@ ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
 
 **Appwrite Collections Setup:**
 
-1. **error-submissions**: `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`
-2. **rate-limits**: `clientId`, `requests`, `lastReset`
+- **error-submissions**: `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`
 
 ## 🤝 Contributing
 
