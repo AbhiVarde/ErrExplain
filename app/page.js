@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import HistoryDashboard from "../components/HistoryDashboard";
 import ShareButton from "@/components/SharedButton";
+import { getSampleErrors, detectLanguage } from "./api/utils";
 
 const languages = [
   "JavaScript",
@@ -89,75 +90,46 @@ export default function Home() {
   });
 
   const validateErrorMessage = (text) => {
-    if (!text || text.trim().length < 10) return false;
+    if (!text || text.trim().length < 8) {
+      return {
+        isValid: false,
+        message: "Please enter at least 8 characters.",
+        suggestion: null,
+      };
+    }
 
-    const cleanText = text.trim().toLowerCase();
+    const cleanText = text.trim();
+    let score = 0;
 
-    // strict error pattern matching
-    const errorPatterns = [
+    // flexible patterns
+    const patterns = [
       /\b(error|exception|failed|failure)\s*[:]/i,
-      /\b(typeerror|referenceerror|syntaxerror|rangeerror|nameerror|valueerror|keyerror|indexerror|attributeerror|importerror|indentationerror|filenotfounderror|permissionerror)\b/i,
-      /\b(nullpointerexception|classnotfoundexception|nosuchmethoderror|outofmemoryerror|stackoverflowerror)\b/i,
-      /\bsegmentation fault\b|\baccess violation\b/i,
-      /\b(404|500|502|503)\b.*\b(error|not found|server error)\b/i,
-      /\bcors\s+(error|policy)/i,
-      /\bnetwork\s+(error|timeout|refused)/i,
-      /\bconnection\s+(refused|timeout|failed)/i,
-      // Stack trace patterns
-      /at\s+[\w.]+\s*\([^)]*:\d+:\d+\)/i,
+      /\b(typeerror|referenceerror|syntaxerror|nameerror|valueerror|keyerror|importerror)\b/i,
+      /at\s+.*:\d+:\d+/i,
       /line\s+\d+/i,
       /:\d+:\d+/,
-      // Common error phrases
-      /\bcannot\s+(read|access|find|load)\b/i,
-      /\bis\s+not\s+(defined|a\s+function|found)\b/i,
-      /\bunexpected\s+(token|end|character)\b/i,
-      /\bmodule\s+not\s+found\b/i,
-      /\bno\s+module\s+named\b/i,
+      /cannot\s+(read|find|resolve|access)/i,
+      /is\s+not\s+(defined|found|a\s+function)/i,
+      /unexpected\s+(token|end)/i,
+      /module\s+not\s+found/i,
+      /\b(404|500|502|503)\b/i,
+      /\.(js|py|java|php|cpp)[\s:"]/i,
     ];
 
-    // Calculate error score based on multiple factors
-    let errorScore = 0;
+    patterns.forEach((pattern) => {
+      if (pattern.test(cleanText)) score++;
+    });
 
-    // Check for error patterns
-    const matchedPatterns = errorPatterns.filter((pattern) =>
-      pattern.test(text)
-    );
-    errorScore += matchedPatterns.length * 2;
-
-    // Check for file extensions and paths
-    if (
-      /\.(js|ts|jsx|tsx|py|java|cpp|c|php|rb|go|rs|css|html)[\s:"']/i.test(text)
-    ) {
-      errorScore += 1;
+    if (score >= 1) {
+      return { isValid: true };
     }
 
-    // Check for line numbers or stack traces
-    if (/:\d+:\d+|line\s+\d+|at\s+\w/i.test(text)) {
-      errorScore += 2;
-    }
-
-    // Check for code-like structures
-    if (/[{}()\[\];]/.test(text)) {
-      errorScore += 0.5;
-    }
-
-    // Penalty for too much non-error text
-    const words = cleanText.split(/\s+/);
-    const errorKeywords = words.filter((word) =>
-      /^(error|exception|failed|failure|undefined|null|cannot|unexpected|syntax|type|reference)$/i.test(
-        word
-      )
-    );
-
-    const errorKeywordRatio = errorKeywords.length / words.length;
-
-    // If there are very few error keywords relative to total text, reduce score
-    if (errorKeywordRatio < 0.1 && words.length > 20) {
-      errorScore *= 0.5;
-    }
-
-    // Return true if error score is high enough
-    return errorScore >= 2;
+    return {
+      isValid: false,
+      message: "This doesn't look like an error message.",
+      suggestion:
+        "Error messages usually contain keywords like 'Error:', 'TypeError:', 'Exception:', or stack traces with line numbers.",
+    };
   };
 
   // Fetch rate limit on component mount
@@ -205,18 +177,32 @@ export default function Home() {
 
   useEffect(() => {
     if (errorMessage.trim()) {
-      const isValidError = validateErrorMessage(errorMessage);
-      if (!isValidError) {
+      const validation = validateErrorMessage(errorMessage);
+
+      if (!validation.isValid) {
         setValidationError(
-          "This doesn't look like an error message. Please paste actual error text containing error keywords, stack traces, or exception details."
+          validation.message +
+            (validation.suggestion ? `\n\n${validation.suggestion}` : "")
         );
       } else {
         setValidationError("");
+
+        // Auto-detect language and warn about mismatches
+        const detectedLang = detectLanguage(errorMessage);
+        if (
+          detectedLang &&
+          detectedLang !== selectedLanguage &&
+          !["Other"].includes(selectedLanguage)
+        ) {
+          setValidationError(
+            `⚠️ This looks like a ${detectedLang} error, but you've selected ${selectedLanguage}. Consider switching languages for better analysis.`
+          );
+        }
       }
     } else {
       setValidationError("");
     }
-  }, [errorMessage]);
+  }, [errorMessage, selectedLanguage]);
 
   const handleSubmit = async () => {
     if (!errorMessage.trim()) {
@@ -224,9 +210,11 @@ export default function Home() {
       return;
     }
 
-    if (!validateErrorMessage(errorMessage)) {
+    const validation = validateErrorMessage(errorMessage);
+    if (!validation.isValid) {
       setValidationError(
-        "Please paste an actual error message. This appears to be regular text."
+        validation.message +
+          (validation.suggestion ? `\n\n${validation.suggestion}` : "")
       );
       return;
     }
@@ -341,16 +329,8 @@ export default function Home() {
   const insertSampleError = () => {
     if (!rateLimit.canAnalyze) return;
 
-    const sampleErrors = [
-      "TypeError: Cannot read property 'map' of undefined",
-      "ReferenceError: document is not defined",
-      "SyntaxError: Unexpected token '}'",
-      "ModuleNotFoundError: No module named 'pandas'",
-      "NullPointerException at line 42",
-      "CORS error: Access to fetch blocked",
-    ];
-    const randomError =
-      sampleErrors[Math.floor(Math.random() * sampleErrors.length)];
+    const samples = getSampleErrors(selectedLanguage);
+    const randomError = samples[Math.floor(Math.random() * samples.length)];
     setErrorMessage(randomError);
   };
 
