@@ -76,6 +76,11 @@ export default function RootLayout({ children }) {
         <link rel="canonical" href={metadata.canonical} />
         <meta name="keywords" content={metadata.keywords} />
         <meta name="author" content={metadata.author} />
+        <script
+          defer
+          src="https://cloud.umami.is/script.js"
+          data-website-id="d8922eaf-0117-4bb9-8701-bbbcff837d85"
+        ></script>
       </head>
       <body className="font-sans antialiased transition-colors duration-300 text-gray-900">
         <div className="min-h-screen flex flex-col">
