@@ -103,3 +103,20 @@ ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
 - Test error scenarios thoroughly
 - Maintain responsive design
 - Keep commits focused and descriptive
+
+## 🌩️ Appwrite Cloud Beta
+
+Proud to be a part of the **Appwrite Cloud Public Beta**!  
+Click the card to view it live:
+
+<a href="https://cloud.appwrite.io/card/653e053411ff36b703e7" target="_blank">
+  <img width="350" src="https://cloud.appwrite.io/v1/cards/cloud?userId=653e053411ff36b703e7" alt="Appwrite Cloud Card" />
+</a>
+
+## License
+
+ErrExplain is licensed under the [MIT License](http://choosealicense.com/licenses/mit/). All rights reserved.
+
+## Authors
+
+ErrExplain is created and maintained by [Abhi Varde](https://www.abhivarde.in/).
