@@ -111,9 +111,10 @@ export async function POST(request) {
     }
 
     const rawPrompt = process.env.ERROR_ANALYSIS_PROMPT;
+    // Use global replace to replace ALL occurrences of placeholders
     const finalPrompt = rawPrompt
-      .replace("{{language}}", language)
-      .replace("{{errorMessage}}", errorMessage);
+      .replace(/\{\{language\}\}/g, language)
+      .replace(/\{\{errorMessage\}\}/g, errorMessage);
 
     const { object: analysis } = await generateObject({
       model: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
