@@ -49,3 +49,13 @@ body::before {
 .animate-marquee.paused {
   animation-play-state: paused;
 }
+
+::selection {
+  background-color: #0E2E28;
+  color: #CDFA8A;
+}
+
+::-moz-selection {
+  background-color: #0E2E28;
+  color: #CDFA8A;
+}
