@@ -108,7 +108,7 @@ ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
 
 ## 💖 Support
 
-**Love Idea Tracker? Help me keep building!**
+**Love ErrExplain? Help me keep building!**
 
 💚 **$5 / month - Monthly Supporter**  
 Get recognition in the GitHub README under Supporters.  
