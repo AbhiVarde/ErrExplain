@@ -50,6 +50,7 @@ body::before {
   animation-play-state: paused;
 }
 
+/* Selection colors */
 ::selection {
   background-color: #0E2E28;
   color: #CDFA8A;
