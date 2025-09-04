@@ -6,6 +6,8 @@
 
 Instantly analyze programming errors with AI-powered explanations, root cause analysis, and actionable solutions.
 
+<img width="1200" height="630" alt="og-image" src="https://github.com/user-attachments/assets/ba1adbe1-1d5e-46f7-b2ed-60ea79447b4f" />
+
 ## 🛠️ Key Features
 
 - **🔍 Smart Error Analysis** - Paste any error message and get structured explanations
