@@ -2,9 +2,12 @@ export function getClientId(request) {
   const forwarded = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
   const userAgent = request.headers.get("user-agent") || "";
+  const acceptLanguage = request.headers.get("accept-language") || "";
+  const acceptEncoding = request.headers.get("accept-encoding") || "";
 
   const ip = forwarded?.split(",")[0] || realIp || "unknown";
-  const fingerprint = Buffer.from(userAgent + ip)
+  
+  const fingerprint = Buffer.from(userAgent + ip + acceptLanguage + acceptEncoding)
     .toString("base64")
     .slice(0, 16);
 
