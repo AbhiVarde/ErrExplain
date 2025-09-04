@@ -355,7 +355,7 @@ export default function HistoryDashboard({ onSelectError }) {
           {title}
         </h4>
         {title === "Explanation" ? (
-          <p className={`text-xs ${textColor} leading-relaxed break-words`}>
+          <p className={`text-xs ${textColor} leading-relaxed break-all`}>
             {items}
           </p>
         ) : (
@@ -370,7 +370,7 @@ export default function HistoryDashboard({ onSelectError }) {
                 >
                   {i + 1}.
                 </span>
-                <span className="leading-relaxed break-words">{item}</span>
+                <span className="leading-relaxed break-all">{item}</span>
               </li>
             ))}
           </ul>
@@ -407,7 +407,7 @@ export default function HistoryDashboard({ onSelectError }) {
       <LanguageChart />
 
       {/* Error History */}
-      <div className="p-4 rounded-xl bg-white border border-gray-200">
+      <div className="p-3 sm:p-4 rounded-xl bg-white border border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
             <Clock className="w-4 h-4" />
@@ -426,7 +426,7 @@ export default function HistoryDashboard({ onSelectError }) {
           </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {history.map((item) => {
             const isExpanded = expandedItems.has(item.id);
             const severityConfig = getSeverityConfig(item.severity);
@@ -437,44 +437,64 @@ export default function HistoryDashboard({ onSelectError }) {
                 className="rounded-xl border border-gray-200 bg-white transition overflow-hidden"
               >
                 {/* Header */}
-                <div className="p-3">
-                  <div className="flex items-start justify-between gap-3">
+                <div className="p-2 sm:p-3">
+                  <div className="flex items-start justify-between gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className="text-xs font-medium text-gray-900 bg-gray-100 px-2 py-0.5 rounded-xl">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 flex-wrap">
+                        <span className="text-xs font-medium text-gray-900 bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-lg sm:rounded-xl">
                           {item.language}
                         </span>
                         <span
-                          className={`px-1.5 py-0.5 rounded-xl text-xs font-medium border ${severityConfig.class}`}
+                          className={`px-1.5 py-0.5 rounded-lg sm:rounded-xl text-xs font-medium border ${severityConfig.class}`}
                         >
                           {item.severity}
                         </span>
-                        <span className="text-xs text-gray-500 truncate">
+                        <span className="text-xs text-gray-500 truncate hidden sm:inline">
                           {item.category}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-700 font-mono bg-white px-2 py-1 rounded-xl leading-tight break-words line-clamp-2">
-                        {item.errorMessage}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+
+                      {/* Category for mobile - show below badges */}
+                      <div className="text-xs text-gray-500 mb-1.5 sm:hidden">
+                        {item.category}
+                      </div>
+
+                      {/* Error message with better mobile handling */}
+                      <div className="text-xs text-gray-700 font-mono bg-gray-50 px-2 py-1.5 rounded-lg sm:rounded-xl leading-relaxed">
+                        <div
+                          className={`break-all ${
+                            !isExpanded ? "line-clamp-2 sm:line-clamp-2" : ""
+                          }`}
+                        >
+                          {item.errorMessage}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:gap-3 mt-1.5 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {formatDate(item.timestamp)}
+                          <span className="hidden sm:inline">
+                            {formatDate(item.timestamp)}
+                          </span>
+                          <span className="sm:hidden">
+                            {formatDate(item.timestamp, "short")}
+                          </span>
                         </span>
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-1">
+                    {/* Actions - stacked on very small screens */}
+                    <div className="flex flex-col sm:flex-row items-center gap-1">
                       <ShareButton
                         errorId={item.id}
                         variant="icon"
                         isShared={item.isShared}
                         existingShareId={item.shareId}
+                        className="p-1.5 sm:p-1"
                       />
                       <button
                         onClick={() => toggleExpanded(item.id)}
-                        className="p-1 rounded-xl hover:bg-gray-200 transition cursor-pointer flex-shrink-0"
+                        className="p-1.5 sm:p-1 rounded-xl hover:bg-gray-200 transition cursor-pointer flex-shrink-0"
                       >
                         {isExpanded ? (
                           <ChevronUp className="w-4 h-4 text-gray-600" />
@@ -488,8 +508,8 @@ export default function HistoryDashboard({ onSelectError }) {
 
                 {/* Expanded Content */}
                 {isExpanded && item.analysis && (
-                  <div className="px-3 pb-3 border-t border-gray-200">
-                    <div className="pt-3 space-y-3">
+                  <div className="px-2 sm:px-3 pb-2 sm:pb-3 border-t border-gray-200">
+                    <div className="pt-2 sm:pt-3 space-y-2 sm:space-y-3">
                       <AnalysisSection
                         title="Explanation"
                         items={item.analysis.explanation}

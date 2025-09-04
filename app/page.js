@@ -557,7 +557,7 @@ export default function Home() {
   };
 
   return (
-    <div className="px-4 py-10">
+    <div className="px-2 sm:px-4 py-12 sm:py-10">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8 sm:mb-10">
           <h1 className="text-2xl lg:text-3xl font-semibold leading-tight tracking-wide text-[#0E2E28] mb-2">
@@ -572,28 +572,28 @@ export default function Home() {
           </p>
 
           {/* Rate limit indicator */}
-          <div className="flex items-center justify-center gap-2 mt-3 text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-3 text-xs text-center sm:text-left">
             {rateLimit.loading ? (
-              <div className="text-gray-500">
-                <Loader2 className="w-3 h-3 animate-spin inline mr-1" />
+              <div className="flex items-center text-gray-500">
+                <Loader2 className="w-3 h-3 animate-spin mr-1" />
                 Loading...
               </div>
             ) : rateLimit.canAnalyze ? (
-              <div className="text-gray-600">
-                <Clock className="w-3 h-3 inline mr-1" />
-                <span>{rateLimit.remaining} analyses remaining today </span>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start text-gray-600">
+                <Clock className="w-3 h-3 mr-1" />
+                <span>{rateLimit.remaining} analyses remaining today</span>
                 {rateLimit.resetTime && (
-                  <span className="text-gray-500">
+                  <span className="ml-1 text-gray-500">
                     • Resets in {formatResetTime(rateLimit.resetTime)}
                   </span>
                 )}
               </div>
             ) : (
-              <div className="text-red-600">
-                <XCircle className="w-3 h-3 inline mr-1" />
-                <span>Daily limit reached </span>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start text-red-600">
+                <XCircle className="w-3 h-3 mr-1" />
+                <span>Daily limit reached</span>
                 {rateLimit.resetTime && (
-                  <span className="text-gray-500">
+                  <span className="ml-1 text-gray-500">
                     • Resets in {formatResetTime(rateLimit.resetTime)}
                   </span>
                 )}
@@ -605,11 +605,11 @@ export default function Home() {
         <div className="backdrop-blur-md rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
           {/* Tab Navigation */}
           <div className="border-b border-gray-200 bg-white/50">
-            <div className="flex">
+            <div className="flex divide-x divide-gray-200">
+              {/* Input Tab */}
               <button
                 onClick={() => setActiveTab("input")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium 
-        transition-all duration-200 ease-in-out
+                className={`group flex-1 min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out
         ${
           activeTab === "input"
             ? "bg-[#0E2E28] text-[#CDFA8A]"
@@ -617,16 +617,17 @@ export default function Home() {
         }`}
               >
                 <Code className="w-4 h-4 transition-transform duration-200 ease-in-out group-hover:scale-110" />
-                <span className="hidden sm:inline">Error Input</span>
-                <span className="sm:hidden">Input</span>
+                <span className="hidden sm:inline truncate">Error Input</span>
+                <span className="sm:hidden truncate">Input</span>
               </button>
 
+              {/* Output Tab */}
               <button
                 onClick={() =>
                   (analysis || isLoading) && setActiveTab("output")
                 }
                 disabled={!analysis && !isLoading}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 ease-in-out
+                className={`group flex-1 min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out
         ${
           activeTab === "output" && (analysis || isLoading)
             ? "bg-[#0E2E28] text-[#CDFA8A]"
@@ -636,13 +637,16 @@ export default function Home() {
         }`}
               >
                 <BarChart3 className="w-4 h-4 transition-transform duration-200 ease-in-out group-hover:scale-110" />
-                <span className="hidden sm:inline">Analysis Results</span>
-                <span className="sm:hidden">Results</span>
+                <span className="hidden sm:inline truncate">
+                  Analysis Results
+                </span>
+                <span className="sm:hidden truncate">Results</span>
               </button>
 
+              {/* History Tab */}
               <button
                 onClick={() => setActiveTab("history")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 ease-in-out
+                className={`group flex-1 min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out
         ${
           activeTab === "history"
             ? "bg-[#0E2E28] text-[#CDFA8A]"
@@ -650,8 +654,8 @@ export default function Home() {
         }`}
               >
                 <History className="w-4 h-4 transition-transform duration-200 ease-in-out group-hover:scale-110" />
-                <span className="hidden sm:inline">Error History</span>
-                <span className="sm:hidden">History</span>
+                <span className="hidden sm:inline truncate">Error History</span>
+                <span className="sm:hidden truncate">History</span>
               </button>
             </div>
           </div>
