@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Code,
   BarChart3,
-  AlertTriangle,
   CheckCircle,
   Clock,
   XCircle,
@@ -46,6 +45,15 @@ const languages = [
   "Appwrite",
   "Other",
 ];
+
+const compatibilityMap = {
+  JavaScript: ["TypeScript", "React", "Next.js"],
+  TypeScript: ["JavaScript", "React", "Next.js"],
+  React: ["JavaScript", "TypeScript", "Next.js"],
+  "Next.js": ["JavaScript", "TypeScript", "React"],
+  "Node.js": ["JavaScript", "TypeScript"],
+  "HTML/CSS": ["JavaScript", "React", "Next.js"],
+};
 
 const accordionItems = [
   {
@@ -101,9 +109,16 @@ export default function Home() {
     const cleanText = text.trim();
     let score = 0;
 
-    // flexible patterns
+    // comprehensive patterns
     const patterns = [
+      // generic
       /\b(error|exception|failed|failure)\s*[:]/i,
+      /\b(unhandled exception)\b/i,
+      /\bnullreferenceexception\b/i,
+      /\bargument(exception|outofrange)\b/i,
+      /\bvalue does not fall within\b/i,
+
+      // JS / Python / Java / PHP
       /\b(typeerror|referenceerror|syntaxerror|nameerror|valueerror|keyerror|importerror)\b/i,
       /at\s+.*:\d+:\d+/i,
       /line\s+\d+/i,
@@ -112,8 +127,80 @@ export default function Home() {
       /is\s+not\s+(defined|found|a\s+function)/i,
       /unexpected\s+(token|end)/i,
       /module\s+not\s+found/i,
+
+      // compiler/runtime codes
+      /\bCS\d{4}\b/i, // C# compiler error codes
+      /\.cs\(\d+,\d+\)/i, // C# file + line
+      /\.java:\d+/i,
+      /\.py[\s:"]/i,
+      /\.php.*line\s+\d+/i,
+      /\.cpp:\d+/i,
+      /\.ts(x)?:\d+/i,
+
+      // HTTP/server
       /\b(404|500|502|503)\b/i,
-      /\.(js|py|java|php|cpp)[\s:"]/i,
+
+      // file extensions as fallback
+      /\.(js|py|java|php|cpp|cs|rb|go|rs|swift|kt|sql|html|css)[\s:"]/i,
+
+      // C# specific patterns
+      /system\.\w+exception/i,
+      /program\.cs:\s*line\s*\d+/i,
+      /string\.isnullorempty/i,
+
+      // Ruby specific
+      /\.rb:\d+/i,
+      /undefined method.*for/i,
+      /nomethoderror/i,
+      /loaderror.*cannot load/i,
+      /nameerror.*undefined local variable/i,
+
+      // Go specific
+      /\.go:\d+/i,
+      /panic:/i,
+      /goroutine \d+/i,
+      /undefined:.*fmt\./i,
+      /cannot use.*as type/i,
+
+      // SQL specific
+      /ERROR \d+/i,
+      /duplicate entry/i,
+      /syntax error.*near/i,
+      /table.*doesn.*exist/i,
+
+      // Linux/Bash specific
+      /permission denied/i,
+      /command not found/i,
+      /segmentation fault/i,
+      /bash:.*command not found/i,
+      /usr\/bin\/env/i,
+      /mkdir:.*permission denied/i,
+
+      // Docker specific
+      /failed to solve/i,
+      /dockerfile/i,
+      /executor failed running/i,
+      /pull access denied/i,
+      /killed by sigkill/i,
+
+      // Git specific
+      /fatal:.*git/i,
+      /not a git repository/i,
+      /local changes would be overwritten/i,
+      /conflict.*content/i,
+      /automatic merge failed/i,
+
+      // Swift specific
+      /thread.*fatal error/i,
+      /viewcontroller\.swift/i,
+      /exc_bad_access/i,
+      /index out of range/i,
+      /appdelegate\.swift/i,
+
+      // Appwrite specific
+      /appwriteexception/i,
+      /document.*not.*found/i,
+      /collection.*not.*found/i,
     ];
 
     patterns.forEach((pattern) => {
@@ -128,7 +215,7 @@ export default function Home() {
       isValid: false,
       message: "This doesn't look like an error message.",
       suggestion:
-        "Error messages usually contain keywords like 'Error:', 'TypeError:', 'Exception:', or stack traces with line numbers.",
+        "Error messages usually contain keywords like 'Error:', 'TypeError:', 'Exception:', 'CS1002', or stack traces with line numbers.",
     };
   };
 
@@ -192,10 +279,14 @@ export default function Home() {
         if (
           detectedLang &&
           detectedLang !== selectedLanguage &&
+          !(
+            compatibilityMap[selectedLanguage]?.includes(detectedLang) ||
+            compatibilityMap[detectedLang]?.includes(selectedLanguage)
+          ) &&
           !["Other"].includes(selectedLanguage)
         ) {
           setValidationError(
-            `⚠️ This looks like a ${detectedLang} error, but you've selected ${selectedLanguage}. Consider switching languages for better analysis.`
+            `This looks like a ${detectedLang} error, but you've selected ${selectedLanguage}. Consider switching languages for better analysis.`
           );
         }
       }
@@ -702,7 +793,7 @@ export default function Home() {
                   {validationError && (
                     <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200">
                       <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                        ⚠️
                         <div className="text-sm text-red-700 leading-relaxed whitespace-pre-line">
                           {validationError}
                         </div>
