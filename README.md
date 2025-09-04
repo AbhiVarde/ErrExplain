@@ -6,7 +6,7 @@
 
 Instantly analyze programming errors with AI-powered explanations, root cause analysis, and actionable solutions.
 
-<img width="1200" height="630" alt="og-image" src="https://github.com/user-attachments/assets/ba1adbe1-1d5e-46f7-b2ed-60ea79447b4f" />
+<img width="1200" height="630" alt="og-image" src="./public/og-image.png" />
 
 ## 🛠️ Key Features
 
@@ -105,6 +105,21 @@ ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
 - Test error scenarios thoroughly
 - Maintain responsive design
 - Keep commits focused and descriptive
+
+## 💖 Support
+
+**Love Idea Tracker? Help me keep building!**
+
+💚 **$5 / month - Monthly Supporter**  
+Get recognition in the GitHub README under Supporters.  
+
+🌟 **$19 / month - Monthly Sponsor**  
+Support growth and get recognition both in the GitHub README **and** on my portfolio (abhivarde.in).  
+
+🚀 **$49 / month - Featured Sponsor**  
+Premium support with **extra visibility**: README + Portfolio + **promotion on Sync UI**.  
+
+[👉 Become a Sponsor](https://github.com/sponsors/AbhiVarde)
 
 ## 🌩️ Appwrite Cloud Beta
 
