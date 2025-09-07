@@ -56,12 +56,14 @@ export async function GET(request) {
         timestamp: doc.$createdAt,
         isShared: doc.isShared || false,
         shareId: doc.shareId || null,
+        isPrivate: doc.isPrivate || false,
         analysis: {
           explanation: doc.explanation,
           causes: doc.causes || [],
           solutions: doc.solutions || [],
           severity: doc.severity || "medium",
           category: doc.category || "Runtime Error",
+          exampleCode: doc.exampleCode || null,
         },
       }));
 

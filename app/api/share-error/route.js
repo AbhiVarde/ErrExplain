@@ -48,6 +48,14 @@ export async function POST(request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
       }
 
+      // Check if it's marked as private
+      if (errorDoc.isPrivate) {
+        return NextResponse.json(
+          { error: "Cannot share private error analysis" },
+          { status: 403 }
+        );
+      }
+
       // Check if already shared
       if (errorDoc.isShared && errorDoc.shareId) {
         return NextResponse.json({

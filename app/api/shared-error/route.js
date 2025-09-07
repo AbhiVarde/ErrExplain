@@ -42,6 +42,7 @@ export async function GET(request) {
         [
           Query.equal("shareId", shareId),
           Query.equal("isShared", true),
+          Query.equal("isPrivate", false),
           Query.limit(1),
         ]
       );
@@ -71,6 +72,7 @@ export async function GET(request) {
           solutions: doc.solutions || [],
           severity: doc.severity || "medium",
           category: doc.category || "Runtime Error",
+          exampleCode: doc.exampleCode || null,
         },
       };
 
