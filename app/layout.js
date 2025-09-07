@@ -2,6 +2,7 @@ import "./globals.css";
 import Header from "../components/common/Header";
 import Footer from "../components/common/Footer";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export const metadata = {
   title: {
@@ -82,27 +83,18 @@ export default function RootLayout({ children }) {
           data-website-id="d8922eaf-0117-4bb9-8701-bbbcff837d85"
         ></script>
       </head>
-      <body className="font-sans antialiased transition-colors duration-300 text-gray-900">
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1 flex justify-center pt-16 md:pt-20">
-            <div className="w-full max-w-4xl px-2 sm:px-4">{children}</div>
-          </main>
-          <Footer />
-        </div>
+      <body className="font-sans antialiased transition-colors duration-300">
+        <ThemeProvider>
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1 flex justify-center pt-16 md:pt-20">
+              <div className="w-full max-w-4xl px-2 sm:px-4">{children}</div>
+            </main>
+            <Footer />
+          </div>
 
-        <Toaster
-          position="bottom-right"
-          richColors
-          closeButton
-          toastOptions={{
-            style: {
-              background: "white",
-              border: "1px solid #e2e8f0",
-              color: "#0f172a",
-            },
-          }}
-        />
+          <Toaster position="bottom-right" richColors closeButton />
+        </ThemeProvider>
       </body>
     </html>
   );

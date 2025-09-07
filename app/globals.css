@@ -2,17 +2,36 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap");
 
 :root {
+  /* Light theme (default) */
   --background: #E6F0EDCC;
+  --primary-bg: #0E2E28;
+  --primary-text: #CDFA8A;
+  --text-primary: #000000;
+  --surface-white: #ffffff;
+}
+
+[data-theme="dark"] {
+  /* Dark theme */
+  --background: #1a1a1a;
+  --primary-bg: #CDFA8A;
+  --primary-text: #0E2E28;
+  --text-primary: #ffffff;
+  --surface-white: #2d2d2d;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-primary-bg: var(--primary-bg);
+  --color-primary-text: var(--primary-text);
+  --color-text-primary: var(--text-primary);
+  --color-surface-white: var(--surface-white);
   --font-sans: "Geist Mono", monospace;
 }
 
 body {
   font-family: "Geist Mono", monospace;
-  color: #000;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body::before {
@@ -27,6 +46,13 @@ body::before {
   background-size: 20px 20px;
   z-index: -1;
   pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+[data-theme="dark"] body::before {
+  background: var(--background);
+  background-image: radial-gradient(circle, rgba(205, 250, 138, 0.19) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 /* Infinite marquee animation */
@@ -52,11 +78,11 @@ body::before {
 
 /* Selection colors */
 ::selection {
-  background-color: #0E2E28;
-  color: #CDFA8A;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
 }
 
 ::-moz-selection {
-  background-color: #0E2E28;
-  color: #CDFA8A;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 import { Share2, Copy, Check, Loader2, ExternalLink, Lock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -12,6 +13,7 @@ export default function ShareButton({
   isPrivate = false,
   onShareComplete,
 }) {
+  const { theme } = useTheme();
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState(
     isShared && existingShareId
@@ -105,8 +107,16 @@ export default function ShareButton({
         <div className="flex items-center gap-2">
           <button
             onClick={() => copyToClipboard(shareUrl)}
-            className={`p-1.5 cursor-pointer rounded hover:bg-gray-200 transition ${
-              copied ? "text-green-600" : "text-gray-600"
+            className={`p-1.5 cursor-pointer rounded transition ${
+              theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-200"
+            } ${
+              copied
+                ? theme === "dark"
+                  ? "text-green-400"
+                  : "text-green-600"
+                : theme === "dark"
+                ? "text-gray-400"
+                : "text-gray-600"
             }`}
             title={copied ? "Copied!" : "Copy Link"}
           >
@@ -119,7 +129,11 @@ export default function ShareButton({
 
           <button
             onClick={openInNewTab}
-            className="p-1.5 cursor-pointer rounded hover:bg-gray-200 transition text-gray-600"
+            className={`p-1.5 cursor-pointer rounded transition ${
+              theme === "dark"
+                ? "hover:bg-gray-700 text-gray-400"
+                : "hover:bg-gray-200 text-gray-600"
+            }`}
             title="Open in new tab"
           >
             <ExternalLink className="w-4 h-4" />
@@ -132,12 +146,26 @@ export default function ShareButton({
       <div className="flex gap-2">
         <button
           onClick={() => copyToClipboard(shareUrl)}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm cursor-pointer font-medium border border-gray-300 rounded-xl hover:bg-gray-50 transition"
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm cursor-pointer font-medium border rounded-xl transition ${
+            theme === "dark"
+              ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+              : "border-gray-300 hover:bg-gray-50 text-gray-700"
+          }`}
         >
           {copied ? (
             <>
-              <Check className="w-4 h-4 text-green-600" />
-              <span className="text-green-600">Copied!</span>
+              <Check
+                className={`w-4 h-4 ${
+                  theme === "dark" ? "text-green-400" : "text-green-600"
+                }`}
+              />
+              <span
+                className={
+                  theme === "dark" ? "text-green-400" : "text-green-600"
+                }
+              >
+                Copied!
+              </span>
             </>
           ) : (
             <>
@@ -149,7 +177,11 @@ export default function ShareButton({
 
         <button
           onClick={openInNewTab}
-          className="px-3 py-2 border cursor-pointer border-gray-300 rounded-xl hover:bg-gray-50 transition"
+          className={`px-3 py-2 border cursor-pointer rounded-xl transition ${
+            theme === "dark"
+              ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+              : "border-gray-300 hover:bg-gray-50 text-gray-700"
+          }`}
         >
           <ExternalLink className="w-4 h-4" />
         </button>
@@ -163,23 +195,31 @@ export default function ShareButton({
         <button
           onClick={handleShare}
           disabled={isSharing}
-          className={`p-1.5 rounded hover:bg-gray-200 transition ${
+          className={`p-1.5 rounded transition ${
             isSharing ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+          } ${
+            theme === "dark"
+              ? "hover:bg-gray-700 text-gray-400"
+              : "hover:bg-gray-200 text-gray-600"
           }`}
           title="Share"
         >
           {isSharing ? (
-            <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <Share2 className="w-4 h-4 text-gray-600" />
+            <Share2 className="w-4 h-4" />
           )}
         </button>
       ) : (
         <button
           onClick={handleShare}
           disabled={isSharing}
-          className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium border border-gray-300 rounded-xl hover:bg-gray-50 transition ${
+          className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium border rounded-xl transition ${
             isSharing ? "cursor-not-allowed" : "cursor-pointer"
+          } ${
+            theme === "dark"
+              ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+              : "border-gray-300 hover:bg-gray-50 text-gray-700"
           }`}
         >
           {isSharing ? (

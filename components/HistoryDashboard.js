@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   Clock,
   TrendingUp,
@@ -43,29 +44,29 @@ const CHART_COLORS = [
 
 const SEVERITY_CONFIG = {
   low: {
-    class: "text-green-600 bg-green-50 border-green-200",
+    light: "text-green-600 bg-green-50 border-green-200",
+    dark: "text-green-400 bg-green-900/30 border-green-700",
     color: "#22c55e",
   },
   medium: {
-    class: "text-yellow-600 bg-yellow-50 border-yellow-200",
+    light: "text-yellow-600 bg-yellow-50 border-yellow-200",
+    dark: "text-yellow-400 bg-yellow-900/30 border-yellow-700",
     color: "#eab308",
   },
-  high: { class: "text-red-600 bg-red-50 border-red-200", color: "#ef4444" },
+  high: {
+    light: "text-red-600 bg-red-50 border-red-200",
+    dark: "text-red-400 bg-red-900/30 border-red-700",
+    color: "#ef4444",
+  },
   default: {
-    class: "text-gray-600 bg-gray-50 border-gray-200",
+    light: "text-gray-600 bg-gray-50 border-gray-200",
+    dark: "text-gray-400 bg-gray-800/30 border-gray-600",
     color: "#94a3b8",
   },
 };
 
-const CHART_STYLE = {
-  backgroundColor: "white",
-  border: "1px solid #e5e7eb",
-  borderRadius: "6px",
-  fontSize: "12px",
-  padding: "4px 8px",
-};
-
 export default function HistoryDashboard({ onSelectError }) {
+  const { theme } = useTheme();
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -128,8 +129,13 @@ export default function HistoryDashboard({ onSelectError }) {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  const getSeverityConfig = (severity) =>
-    SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.default;
+  const getSeverityConfig = (severity) => {
+    const config = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.default;
+    return {
+      class: theme === "dark" ? config.dark : config.light,
+      color: config.color,
+    };
+  };
 
   const toggleExpanded = (id) => {
     setExpandedItems((prev) => {
@@ -142,6 +148,15 @@ export default function HistoryDashboard({ onSelectError }) {
       return newSet;
     });
   };
+
+  const getChartStyle = () => ({
+    backgroundColor: theme === "dark" ? "#374151" : "white",
+    border: theme === "dark" ? "1px solid #4b5563" : "1px solid #e5e7eb",
+    borderRadius: "6px",
+    fontSize: "12px",
+    padding: "4px 8px",
+    color: theme === "dark" ? "#f3f4f6" : "#374151",
+  });
 
   // Data preparation
   const topLanguages = Object.entries(stats.languages)
@@ -178,25 +193,37 @@ export default function HistoryDashboard({ onSelectError }) {
       label: "Total",
       icon: FileText,
       value: stats.total,
-      color: "bg-blue-100 text-blue-600",
+      color:
+        theme === "dark"
+          ? "bg-blue-900/30 text-blue-400"
+          : "bg-blue-100 text-blue-600",
     },
     {
       label: "This Week",
       icon: TrendingUp,
       value: stats.timeline.reduce((sum, day) => sum + day.count, 0),
-      color: "bg-green-100 text-green-600",
+      color:
+        theme === "dark"
+          ? "bg-green-900/30 text-green-400"
+          : "bg-green-100 text-green-600",
     },
     {
       label: "Top Lang",
       icon: Code,
       value: topLanguages[0] ? topLanguages[0][0] : "None",
-      color: "bg-purple-100 text-purple-600",
+      color:
+        theme === "dark"
+          ? "bg-purple-900/30 text-purple-400"
+          : "bg-purple-100 text-purple-600",
     },
     {
       label: "Critical",
       icon: AlertCircle,
       value: stats.severity.high,
-      color: "bg-red-100 text-red-600",
+      color:
+        theme === "dark"
+          ? "bg-red-900/30 text-red-400"
+          : "bg-red-100 text-red-600",
     },
   ];
 
@@ -204,8 +231,18 @@ export default function HistoryDashboard({ onSelectError }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <RefreshCw className="w-6 h-6 text-gray-400 animate-spin mb-3" />
-        <p className="text-sm text-gray-600">Loading your history...</p>
+        <RefreshCw
+          className={`w-6 h-6 ${
+            theme === "dark" ? "text-gray-500" : "text-gray-400"
+          } animate-spin mb-3`}
+        />
+        <p
+          className={`text-sm ${
+            theme === "dark" ? "text-gray-400" : "text-gray-600"
+          }`}
+        >
+          Loading your history...
+        </p>
       </div>
     );
   }
@@ -214,9 +251,25 @@ export default function HistoryDashboard({ onSelectError }) {
   if (error) {
     return (
       <div className="text-center py-8">
-        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Load Failed</h3>
-        <p className="text-gray-600 mb-4 text-sm">{error}</p>
+        <AlertCircle
+          className={`w-10 h-10 ${
+            theme === "dark" ? "text-red-400" : "text-red-500"
+          } mx-auto mb-3`}
+        />
+        <h3
+          className={`text-lg font-medium ${
+            theme === "dark" ? "text-white" : "text-gray-900"
+          } mb-2`}
+        >
+          Load Failed
+        </h3>
+        <p
+          className={`${
+            theme === "dark" ? "text-gray-400" : "text-gray-600"
+          } mb-4 text-sm`}
+        >
+          {error}
+        </p>
         <button
           onClick={fetchHistory}
           className="bg-[#CDFA8A] hover:bg-[#B8E678] text-[#0E2E28] font-medium py-2 px-4 rounded-xl flex items-center gap-2 mx-auto transition text-sm cursor-pointer"
@@ -232,9 +285,19 @@ export default function HistoryDashboard({ onSelectError }) {
   if (history.length === 0) {
     return (
       <div className="text-center py-12">
-        <History className="w-12 h-12 text-[#0E2E28] mx-auto mb-3" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No History</h3>
-        <p className="text-gray-600 text-sm">
+        <History className="w-12 h-12 text-[#CDFA8A] mx-auto mb-3" />
+        <h3
+          className={`text-lg font-medium ${
+            theme === "dark" ? "text-white" : "text-gray-900"
+          } mb-2`}
+        >
+          No History
+        </h3>
+        <p
+          className={`${
+            theme === "dark" ? "text-gray-400" : "text-gray-600"
+          } text-sm`}
+        >
           Analyzed errors will appear here
         </p>
       </div>
@@ -244,22 +307,38 @@ export default function HistoryDashboard({ onSelectError }) {
   // Chart components
   const TimelineChart = () =>
     timelineData.length > 0 && (
-      <div className="p-4 rounded-xl bg-white border border-gray-200">
-        <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+      <div
+        className={`p-4 rounded-xl border ${
+          theme === "dark"
+            ? "bg-gray-800/50 border-gray-600"
+            : "bg-white border-gray-200"
+        }`}
+      >
+        <h3
+          className={`text-sm font-medium ${
+            theme === "dark" ? "text-white" : "text-gray-900"
+          } mb-3 flex items-center gap-2`}
+        >
           <Calendar className="w-4 h-4" />
           Activity
         </h3>
         <ResponsiveContainer width="100%" height={180}>
           <LineChart data={timelineData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke={theme === "dark" ? "#4b5563" : "#f3f4f6"}
+            />
             <XAxis
               dataKey="date"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#6b7280" }}
+              tick={{
+                fontSize: 12,
+                fill: theme === "dark" ? "#d1d5db" : "#6b7280",
+              }}
             />
             <YAxis hide />
-            <Tooltip contentStyle={CHART_STYLE} />
+            <Tooltip contentStyle={getChartStyle()} />
             <Line
               type="monotone"
               dataKey="count"
@@ -274,9 +353,23 @@ export default function HistoryDashboard({ onSelectError }) {
 
   const SeverityChart = () =>
     severityData.some((d) => d.value > 0) && (
-      <div className="p-4 rounded-xl bg-white border border-gray-200">
-        <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-500" />
+      <div
+        className={`p-4 rounded-xl border ${
+          theme === "dark"
+            ? "bg-gray-800/50 border-gray-600"
+            : "bg-white border-gray-200"
+        }`}
+      >
+        <h3
+          className={`text-sm font-medium ${
+            theme === "dark" ? "text-white" : "text-gray-900"
+          } mb-3 flex items-center gap-2`}
+        >
+          <AlertCircle
+            className={`w-4 h-4 ${
+              theme === "dark" ? "text-red-400" : "text-red-500"
+            }`}
+          />
           Severity
         </h3>
         <ResponsiveContainer width="100%" height={180}>
@@ -294,7 +387,7 @@ export default function HistoryDashboard({ onSelectError }) {
                 <Cell key={`cell-${index}`} fill={entry.fill} />
               ))}
             </Pie>
-            <Tooltip contentStyle={CHART_STYLE} />
+            <Tooltip contentStyle={getChartStyle()} />
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -302,8 +395,18 @@ export default function HistoryDashboard({ onSelectError }) {
 
   const LanguageChart = () =>
     languageData.length > 0 && (
-      <div className="p-4 rounded-xl bg-white border border-gray-200">
-        <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+      <div
+        className={`p-4 rounded-xl border ${
+          theme === "dark"
+            ? "bg-gray-800/50 border-gray-600"
+            : "bg-white border-gray-200"
+        }`}
+      >
+        <h3
+          className={`text-sm font-medium ${
+            theme === "dark" ? "text-white" : "text-gray-900"
+          } mb-3 flex items-center gap-2`}
+        >
           <Code className="w-4 h-4" />
           Languages
         </h3>
@@ -314,12 +417,18 @@ export default function HistoryDashboard({ onSelectError }) {
                 data={languageData}
                 margin={{ top: 10, right: 10, left: -30, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={theme === "dark" ? "#4b5563" : "#f3f4f6"}
+                />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fill: "#374151" }}
+                  tick={{
+                    fontSize: 10,
+                    fill: theme === "dark" ? "#d1d5db" : "#374151",
+                  }}
                   interval={0}
                   angle={-30}
                   textAnchor="end"
@@ -329,9 +438,12 @@ export default function HistoryDashboard({ onSelectError }) {
                   allowDecimals={false}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12, fill: "#374151" }}
+                  tick={{
+                    fontSize: 12,
+                    fill: theme === "dark" ? "#d1d5db" : "#374151",
+                  }}
                 />
-                <Tooltip contentStyle={CHART_STYLE} />
+                <Tooltip contentStyle={getChartStyle()} />
                 <Bar dataKey="value" barSize={28} radius={[6, 6, 0, 0]}>
                   {languageData.map((entry, index) => (
                     <Cell
@@ -350,7 +462,7 @@ export default function HistoryDashboard({ onSelectError }) {
   // Analysis section component
   const AnalysisSection = ({ title, items, bgColor, textColor, dotColor }) =>
     items?.length > 0 && (
-      <div className={`${bgColor} p-2.5 rounded-xl`}>
+      <div className={bgColor}>
         <h4
           className={`font-semibold ${textColor} mb-1.5 flex items-center gap-2 text-xs`}
         >
@@ -366,10 +478,9 @@ export default function HistoryDashboard({ onSelectError }) {
             {items.map((item, i) => (
               <li key={i} className={`text-xs ${textColor} flex gap-2`}>
                 <span
-                  className={`${textColor.replace(
-                    "800",
-                    "600"
-                  )} font-medium flex-shrink-0`}
+                  className={`${textColor
+                    .replace("800", "600")
+                    .replace("300", "400")} font-medium flex-shrink-0`}
                 >
                   {i + 1}.
                 </span>
@@ -384,14 +495,20 @@ export default function HistoryDashboard({ onSelectError }) {
   // Code section component
   const CodeSection = ({ title, code, bgColor, textColor, dotColor }) =>
     code && (
-      <div className={`${bgColor} p-2.5 rounded-xl`}>
+      <div className={bgColor}>
         <h4
           className={`font-semibold ${textColor} mb-1.5 flex items-center gap-2 text-xs`}
         >
           <div className={`w-1.5 h-1.5 ${dotColor} rounded-full`}></div>
           {title}
         </h4>
-        <pre className="text-xs text-black font-mono bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap leading-relaxed">
+        <pre
+          className={`text-xs font-mono p-2 rounded border overflow-x-auto whitespace-pre-wrap leading-relaxed ${
+            theme === "dark"
+              ? "text-gray-200 bg-gray-900 border-gray-600"
+              : "text-black bg-white border-gray-300"
+          }`}
+        >
           <code>{code}</code>
         </pre>
       </div>
@@ -404,15 +521,29 @@ export default function HistoryDashboard({ onSelectError }) {
         {statsCards.map((item, i) => (
           <div
             key={i}
-            className="p-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium"
+            className={`p-2.5 rounded-xl border text-sm font-medium ${
+              theme === "dark"
+                ? "bg-gray-800/50 border-gray-600"
+                : "bg-white border-gray-200"
+            }`}
           >
             <div className="flex items-center gap-2 mb-2">
               <div className={`p-1 rounded-sm ${item.color}`}>
                 <item.icon className="w-3.5 h-3.5" />
               </div>
-              <span className="text-gray-700">{item.label}</span>
+              <span
+                className={theme === "dark" ? "text-gray-300" : "text-gray-700"}
+              >
+                {item.label}
+              </span>
             </div>
-            <div className="text-gray-900 truncate">{item.value}</div>
+            <div
+              className={`truncate ${
+                theme === "dark" ? "text-white" : "text-gray-900"
+              }`}
+            >
+              {item.value}
+            </div>
           </div>
         ))}
       </div>
@@ -426,21 +557,33 @@ export default function HistoryDashboard({ onSelectError }) {
       <LanguageChart />
 
       {/* Error History */}
-      <div className="p-3 sm:p-4 rounded-xl bg-white border border-gray-200">
+      <div
+        className={`p-3 sm:p-4 rounded-xl border ${
+          theme === "dark"
+            ? "bg-gray-800/50 border-gray-600"
+            : "bg-white border-gray-200"
+        }`}
+      >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+          <h3
+            className={`text-sm font-medium ${
+              theme === "dark" ? "text-white" : "text-gray-900"
+            } flex items-center gap-2`}
+          >
             <Clock className="w-4 h-4" />
             Recent Errors
           </h3>
           <button
             onClick={fetchHistory}
             disabled={loading}
-            className="p-1.5 rounded-xl hover:bg-gray-100 cursor-pointer transition"
+            className={`p-1.5 rounded-xl transition cursor-pointer ${
+              theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
+            }`}
           >
             <RefreshCw
-              className={`w-4 h-4 text-gray-600 ${
-                loading ? "animate-spin" : ""
-              }`}
+              className={`w-4 h-4 ${
+                theme === "dark" ? "text-gray-400" : "text-gray-600"
+              } ${loading ? "animate-spin" : ""}`}
             />
           </button>
         </div>
@@ -453,14 +596,24 @@ export default function HistoryDashboard({ onSelectError }) {
             return (
               <div
                 key={item.id}
-                className="rounded-xl border border-gray-200 bg-white transition overflow-hidden"
+                className={`rounded-xl border transition overflow-hidden ${
+                  theme === "dark"
+                    ? "border-gray-600 bg-gray-800/30"
+                    : "border-gray-200 bg-white"
+                }`}
               >
                 {/* Header */}
                 <div className="p-2 sm:p-3">
                   <div className="flex items-start justify-between gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 flex-wrap">
-                        <span className="text-xs font-medium text-gray-900 bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-lg sm:rounded-xl">
+                        <span
+                          className={`text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-lg sm:rounded-xl ${
+                            theme === "dark"
+                              ? "text-white bg-gray-700"
+                              : "text-gray-900 bg-gray-100"
+                          }`}
+                        >
                           {item.language}
                         </span>
                         <span
@@ -468,18 +621,32 @@ export default function HistoryDashboard({ onSelectError }) {
                         >
                           {item.severity}
                         </span>
-                        <span className="text-xs text-gray-500 truncate hidden sm:inline">
+                        <span
+                          className={`text-xs truncate hidden sm:inline ${
+                            theme === "dark" ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        >
                           {item.category}
                         </span>
                       </div>
 
                       {/* Category for mobile - show below badges */}
-                      <div className="text-xs text-gray-500 mb-1.5 sm:hidden">
+                      <div
+                        className={`text-xs mb-1.5 sm:hidden ${
+                          theme === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
                         {item.category}
                       </div>
 
                       {/* Error message with better mobile handling */}
-                      <div className="text-xs text-gray-700 font-mono bg-gray-50 px-2 py-1.5 rounded-lg sm:rounded-xl leading-relaxed">
+                      <div
+                        className={`text-xs font-mono px-2 py-1.5 rounded-lg sm:rounded-xl leading-relaxed ${
+                          theme === "dark"
+                            ? "text-gray-300 bg-gray-900/50"
+                            : "text-gray-700 bg-gray-50"
+                        }`}
+                      >
                         <div
                           className={`break-all ${
                             !isExpanded ? "line-clamp-2 sm:line-clamp-2" : ""
@@ -489,7 +656,11 @@ export default function HistoryDashboard({ onSelectError }) {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 sm:gap-3 mt-1.5 text-xs text-gray-500">
+                      <div
+                        className={`flex items-center gap-2 sm:gap-3 mt-1.5 text-xs ${
+                          theme === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           <span className="hidden sm:inline">
@@ -516,12 +687,28 @@ export default function HistoryDashboard({ onSelectError }) {
                       )}
                       <button
                         onClick={() => toggleExpanded(item.id)}
-                        className="p-1.5 sm:p-1 rounded-xl hover:bg-gray-200 transition cursor-pointer flex-shrink-0"
+                        className={`p-1.5 sm:p-1 rounded-xl transition cursor-pointer flex-shrink-0 ${
+                          theme === "dark"
+                            ? "hover:bg-gray-700"
+                            : "hover:bg-gray-200"
+                        }`}
                       >
                         {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-gray-600" />
+                          <ChevronUp
+                            className={`w-4 h-4 ${
+                              theme === "dark"
+                                ? "text-gray-400"
+                                : "text-gray-600"
+                            }`}
+                          />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-600" />
+                          <ChevronDown
+                            className={`w-4 h-4 ${
+                              theme === "dark"
+                                ? "text-gray-400"
+                                : "text-gray-600"
+                            }`}
+                          />
                         )}
                       </button>
                     </div>
@@ -530,38 +717,78 @@ export default function HistoryDashboard({ onSelectError }) {
 
                 {/* Expanded Content */}
                 {isExpanded && item.analysis && (
-                  <div className="px-2 sm:px-3 pb-2 sm:pb-3 border-t border-gray-200">
+                  <div
+                    className={`px-2 sm:px-3 pb-2 sm:pb-3 border-t ${
+                      theme === "dark" ? "border-gray-600" : "border-gray-200"
+                    }`}
+                  >
                     <div className="pt-2 sm:pt-3 space-y-2 sm:space-y-3">
                       <AnalysisSection
                         title="Explanation"
                         items={item.analysis.explanation}
-                        bgColor="bg-blue-50"
-                        textColor="text-blue-800"
-                        dotColor="bg-blue-500"
+                        bgColor={
+                          theme === "dark"
+                            ? "bg-blue-900/20 p-2.5 rounded-xl"
+                            : "bg-blue-50 p-2.5 rounded-xl"
+                        }
+                        textColor={
+                          theme === "dark" ? "text-blue-300" : "text-blue-800"
+                        }
+                        dotColor={
+                          theme === "dark" ? "bg-blue-400" : "bg-blue-500"
+                        }
                       />
 
                       <AnalysisSection
                         title="Causes"
                         items={item.analysis.causes}
-                        bgColor="bg-orange-50"
-                        textColor="text-orange-800"
-                        dotColor="bg-orange-500"
+                        bgColor={
+                          theme === "dark"
+                            ? "bg-orange-900/20 p-2.5 rounded-xl"
+                            : "bg-orange-50 p-2.5 rounded-xl"
+                        }
+                        textColor={
+                          theme === "dark"
+                            ? "text-orange-300"
+                            : "text-orange-800"
+                        }
+                        dotColor={
+                          theme === "dark" ? "bg-orange-400" : "bg-orange-500"
+                        }
                       />
 
                       <AnalysisSection
                         title="Solutions"
                         items={item.analysis.solutions}
-                        bgColor="bg-green-50"
-                        textColor="text-green-800"
-                        dotColor="bg-green-500"
+                        bgColor={
+                          theme === "dark"
+                            ? "bg-green-900/20 p-2.5 rounded-xl"
+                            : "bg-green-50 p-2.5 rounded-xl"
+                        }
+                        textColor={
+                          theme === "dark" ? "text-green-300" : "text-green-800"
+                        }
+                        dotColor={
+                          theme === "dark" ? "bg-green-400" : "bg-green-500"
+                        }
                       />
 
                       <CodeSection
                         title="Example Code (Reproduces Error)"
                         code={item.analysis?.exampleCode}
-                        bgColor="bg-purple-50"
-                        textColor="text-purple-800"
-                        dotColor="bg-purple-500"
+                        bgColor={
+                          theme === "dark"
+                            ? "bg-purple-900/20 p-2.5 rounded-xl"
+                            : "bg-purple-50 p-2.5 rounded-xl"
+                        }
+                        textColor={
+                          theme === "dark"
+                            ? "text-purple-300"
+                            : "text-purple-800"
+                        }
+                        dotColor={
+                          theme === "dark" ? "bg-purple-400" : "bg-purple-500"
+                        }
                       />
                     </div>
                   </div>

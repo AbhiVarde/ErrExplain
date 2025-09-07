@@ -3,7 +3,7 @@ import Image from "next/image";
 export default function Footer() {
   return (
     <footer className="w-full bg-transparent">
-      <div className="max-w-4xl mx-auto py-6 flex flex-col items-center text-center gap-2 px-3 text-sm text-[#0E2E28]">
+      <div className="max-w-4xl mx-auto py-6 flex flex-col items-center text-center gap-2 px-3 text-sm text-[var(--text-primary)]">
         {/* Built with */}
         <div className="flex flex-wrap items-center justify-center gap-2 font-medium">
           <span>Built with</span>
