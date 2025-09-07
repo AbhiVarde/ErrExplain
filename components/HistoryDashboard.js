@@ -28,6 +28,7 @@ import {
   Bar,
 } from "recharts";
 import ShareButton from "./SharedButton";
+import { toast } from "sonner";
 
 // Constants
 const CHART_COLORS = [
@@ -96,10 +97,12 @@ export default function HistoryDashboard({ onSelectError }) {
         );
         setError(null);
       } else {
+        toast.error("Failed to load history");
         setError("Failed to load history");
       }
     } catch (err) {
       console.error("Error fetching history:", err);
+      toast.error("Network error: Failed to load history");
       setError("Failed to load history");
     } finally {
       setLoading(false);
@@ -378,6 +381,22 @@ export default function HistoryDashboard({ onSelectError }) {
       </div>
     );
 
+  // Code section component
+  const CodeSection = ({ title, code, bgColor, textColor, dotColor }) =>
+    code && (
+      <div className={`${bgColor} p-2.5 rounded-xl`}>
+        <h4
+          className={`font-semibold ${textColor} mb-1.5 flex items-center gap-2 text-xs`}
+        >
+          <div className={`w-1.5 h-1.5 ${dotColor} rounded-full`}></div>
+          {title}
+        </h4>
+        <pre className="text-xs text-black font-mono bg-white p-2 rounded border overflow-x-auto whitespace-pre-wrap leading-relaxed">
+          <code>{code}</code>
+        </pre>
+      </div>
+    );
+
   return (
     <div className="space-y-4">
       {/* Quick Stats */}
@@ -483,15 +502,18 @@ export default function HistoryDashboard({ onSelectError }) {
                       </div>
                     </div>
 
-                    {/* Actions - stacked on very small screens */}
+                    {/* Actions */}
                     <div className="flex flex-col sm:flex-row items-center gap-1">
-                      <ShareButton
-                        errorId={item.id}
-                        variant="icon"
-                        isShared={item.isShared}
-                        existingShareId={item.shareId}
-                        className="p-1.5 sm:p-1"
-                      />
+                      {!item.isPrivate && (
+                        <ShareButton
+                          errorId={item.id}
+                          variant="icon"
+                          isShared={item.isShared}
+                          existingShareId={item.shareId}
+                          isPrivate={item.isPrivate}
+                          className="p-1.5 sm:p-1"
+                        />
+                      )}
                       <button
                         onClick={() => toggleExpanded(item.id)}
                         className="p-1.5 sm:p-1 rounded-xl hover:bg-gray-200 transition cursor-pointer flex-shrink-0"
@@ -532,6 +554,14 @@ export default function HistoryDashboard({ onSelectError }) {
                         bgColor="bg-green-50"
                         textColor="text-green-800"
                         dotColor="bg-green-500"
+                      />
+
+                      <CodeSection
+                        title="Example Code (Reproduces Error)"
+                        code={item.analysis?.exampleCode}
+                        bgColor="bg-purple-50"
+                        textColor="text-purple-800"
+                        dotColor="bg-purple-500"
                       />
                     </div>
                   </div>

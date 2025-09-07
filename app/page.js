@@ -20,6 +20,7 @@ import {
 import HistoryDashboard from "../components/HistoryDashboard";
 import ShareButton from "@/components/SharedButton";
 import { getSampleErrors, detectLanguage } from "./api/utils";
+import { toast } from "sonner";
 
 const languages = [
   "JavaScript",
@@ -77,6 +78,13 @@ const accordionItems = [
     loadingText: "Finding solutions...",
     color: "green",
   },
+  {
+    id: "exampleCode",
+    title: "Example Code (Reproduces This Error)",
+    icon: FileCode2,
+    loadingText: "Generating example...",
+    color: "purple",
+  },
 ];
 
 export default function Home() {
@@ -96,6 +104,7 @@ export default function Home() {
     canAnalyze: true,
     loading: true,
   });
+  const [isPrivate, setIsPrivate] = useState(false);
 
   const validateErrorMessage = (text) => {
     if (!text || text.trim().length < 8) {
@@ -297,21 +306,20 @@ export default function Home() {
 
   const handleSubmit = async () => {
     if (!errorMessage.trim()) {
-      setValidationError("Please enter an error message.");
+      toast.error("Please enter an error message.");
       return;
     }
 
     const validation = validateErrorMessage(errorMessage);
     if (!validation.isValid) {
-      setValidationError(
+      const errorMsg =
         validation.message +
-          (validation.suggestion ? `\n\n${validation.suggestion}` : "")
-      );
+        (validation.suggestion ? `\n\n${validation.suggestion}` : "");
+      toast.error(errorMsg);
       return;
     }
-
     if (!rateLimit.canAnalyze) {
-      setValidationError(
+      toast.error(
         "Daily limit reached (5 analyses per day). Please try again tomorrow."
       );
       return;
@@ -340,6 +348,7 @@ export default function Home() {
         body: JSON.stringify({
           errorMessage: errorMessage.trim(),
           language: selectedLanguage,
+          isPrivate: isPrivate,
         }),
       });
 
@@ -347,7 +356,7 @@ export default function Home() {
 
       if (!response.ok) {
         if (response.status === 429) {
-          setValidationError(data.error);
+          toast.error(data.error);
           setRateLimit((prev) => ({
             ...prev,
             remaining: data.remaining || 0,
@@ -357,9 +366,9 @@ export default function Home() {
               : prev.resetTime,
           }));
         } else if (response.status === 400 && data.suggestion) {
-          setValidationError(`${data.error}\n\n${data.suggestion}`);
+          toast.error(`${data.error}\n\n${data.suggestion}`);
         } else {
-          setValidationError(
+          toast.error(
             data.error || "Failed to analyze error. Please try again."
           );
         }
@@ -370,6 +379,7 @@ export default function Home() {
       if (data.success && data.analysis) {
         setAnalysis(data.analysis);
         setLoadingSteps(new Set());
+        toast.success("Error analysis completed!");
 
         // Update rate limit info from API response
         if (data.rateLimit) {
@@ -389,14 +399,12 @@ export default function Home() {
           setOpenAccordions(new Set(["explanation"]));
         }, 300);
       } else {
-        setValidationError("Failed to analyze error. Please try again.");
+        toast.error("Failed to analyze error. Please try again.");
         setActiveTab("input");
       }
     } catch (err) {
       console.error("Error:", err);
-      setValidationError(
-        "Network error. Please check your connection and try again."
-      );
+      toast.error("Network error. Please check your connection and try again.");
       setActiveTab("input");
     } finally {
       setIsLoading(false);
@@ -449,6 +457,9 @@ export default function Home() {
       green: isOpen
         ? "border-green-200 bg-green-50"
         : "border-gray-200 hover:border-green-200",
+      purple: isOpen
+        ? "border-purple-200 bg-purple-50"
+        : "border-gray-200 hover:border-purple-200",
     };
     return colors[color] || colors.blue;
   };
@@ -458,6 +469,7 @@ export default function Home() {
       blue: "text-blue-600",
       orange: "text-orange-600",
       green: "text-green-600",
+      purple: "text-purple-600",
     };
     return colors[color] || colors.blue;
   };
@@ -533,6 +545,20 @@ export default function Home() {
               </li>
             ))}
           </ul>
+        ) : null;
+
+      // Add this new case
+      case "exampleCode":
+        return analysis.exampleCode ? (
+          <div>
+            <pre className="text-sm text-gray-700 font-mono bg-white p-3 rounded border overflow-x-auto whitespace-pre-wrap leading-relaxed">
+              <code>{analysis.exampleCode}</code>
+            </pre>
+            <p className="text-xs text-gray-500 mt-2">
+              This code demonstrates how the error occurs. Compare with your
+              code to understand the issue.
+            </p>
+          </div>
         ) : null;
 
       default:
@@ -735,6 +761,21 @@ export default function Home() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Private Analysis Toggle */}
+                <div className="mt-4">
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={isPrivate}
+                      onChange={(e) => setIsPrivate(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <span>
+                      Keep this analysis private (don't add to public history)
+                    </span>
+                  </label>
                 </div>
 
                 {/* Error Input */}
@@ -969,11 +1010,12 @@ export default function Home() {
                           <RefreshCcw className="w-4 h-4" />
                           Analyze Another Error
                         </button>
-                        {analysis.id && (
+                        {analysis.id && !isPrivate && (
                           <ShareButton
                             errorId={analysis.id}
                             isShared={analysis.isShared}
                             existingShareId={analysis.shareId}
+                            isPrivate={isPrivate}
                             onShareComplete={handleShareComplete}
                           />
                         )}

@@ -92,7 +92,7 @@ export default function RootLayout({ children }) {
         </div>
 
         <Toaster
-          position="top-center"
+          position="bottom-right"
           richColors
           closeButton
           toastOptions={{
