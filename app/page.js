@@ -16,6 +16,8 @@ import {
   Clock,
   XCircle,
   History,
+  Square,
+  CheckSquare,
 } from "lucide-react";
 import HistoryDashboard from "../components/HistoryDashboard";
 import ShareButton from "@/components/SharedButton";
@@ -763,21 +765,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Private Analysis Toggle */}
-                <div className="mt-4">
-                  <label className="flex items-center space-x-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={isPrivate}
-                      onChange={(e) => setIsPrivate(e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span>
-                      Keep this analysis private (don't add to public history)
-                    </span>
-                  </label>
-                </div>
-
                 {/* Error Input */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -816,7 +803,7 @@ export default function Home() {
                         : "border-gray-300 bg-white"
                     }`}
                   />
-                  <div className="flex justify-between items-center text-xs mt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs mt-2 gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500">
                         {errorMessage.length}/1000
@@ -830,6 +817,23 @@ export default function Home() {
                           </div>
                         )}
                     </div>
+
+                    {/* Private Analysis Toggle */}
+                    <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isPrivate}
+                        onChange={(e) => setIsPrivate(e.target.checked)}
+                        className="sr-only"
+                      />
+                      {isPrivate ? (
+                        <CheckSquare className="w-4 h-4 text-[#0E2E28] fill-[#CDFA8A]" />
+                      ) : (
+                        <Square className="w-4 h-4 text-[#0E2E28]" />
+                      )}
+                      <span className="text-gray-700">Keep private</span>
+                    </label>
+
                     {errorMessage.length > 900 && (
                       <span className="text-orange-600">Approaching limit</span>
                     )}
