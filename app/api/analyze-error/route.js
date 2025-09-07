@@ -11,7 +11,34 @@ const errorAnalysisSchema = z.object({
   solutions: z.array(z.string()),
   severity: z.enum(["low", "medium", "high"]),
   category: z.string(),
+  exampleCode: z.string(),
 });
+
+// Auto-moderation function to strip sensitive data
+function moderateErrorMessage(errorMessage) {
+  let moderated = errorMessage;
+
+  const sensitivePatterns = [
+    /[a-zA-Z0-9]{20,}/g, // Long alphanumeric strings (potential tokens)
+    /sk-[a-zA-Z0-9]{48}/g, // OpenAI API keys
+    /pk_[a-zA-Z0-9_]{50,}/g, // Stripe keys
+    /AKIA[0-9A-Z]{16}/g, // AWS access keys
+    /password[=:]\s*[^\s\n]+/gi, // Password fields
+    /token[=:]\s*[^\s\n]+/gi, // Token fields
+    /key[=:]\s*[^\s\n]+/gi, // Key fields
+    /secret[=:]\s*[^\s\n]+/gi, // Secret fields
+    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, // Email addresses
+    /\b(?:\d{1,3}\.){3}\d{1,3}\b/g, // IP addresses
+    /\/home\/[a-zA-Z0-9_-]+/g, // Unix home paths
+    /C:\\Users\\[a-zA-Z0-9_-]+/g, // Windows user paths
+  ];
+
+  sensitivePatterns.forEach((pattern) => {
+    moderated = moderated.replace(pattern, "[REDACTED]");
+  });
+
+  return moderated;
+}
 
 async function checkRateLimit(clientId) {
   try {
@@ -61,7 +88,7 @@ async function checkRateLimit(clientId) {
 
 export async function POST(request) {
   try {
-    const { errorMessage, language } = await request.json();
+    const { errorMessage, language, isPrivate = false } = await request.json();
 
     if (!errorMessage || !language) {
       return NextResponse.json(
@@ -110,11 +137,14 @@ export async function POST(request) {
       );
     }
 
+    // Auto-moderate the error message
+    const moderatedError = moderateErrorMessage(errorMessage);
+
     const rawPrompt = process.env.ERROR_ANALYSIS_PROMPT;
-    // Use global replace to replace ALL occurrences of placeholders
+    // Use the moderated error in the prompt
     const finalPrompt = rawPrompt
       .replace(/\{\{language\}\}/g, language)
-      .replace(/\{\{errorMessage\}\}/g, errorMessage);
+      .replace(/\{\{errorMessage\}\}/g, moderatedError);
 
     const { object: analysis } = await generateObject({
       model: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
@@ -136,14 +166,16 @@ export async function POST(request) {
         process.env.NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID,
         ID.unique(),
         {
-          errorMessage: errorMessage.substring(0, 1000),
+          errorMessage: moderatedError.substring(0, 1000),
           language: language.substring(0, 50),
           explanation: analysis.explanation,
           causes: analysis.causes,
           solutions: analysis.solutions,
+          exampleCode: analysis.exampleCode, 
           clientId: clientId,
           severity: analysis.severity,
           category: analysis.category,
+          isPrivate: isPrivate,
         }
       );
 

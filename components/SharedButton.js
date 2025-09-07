@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, Copy, Check, Loader2, ExternalLink } from "lucide-react";
+import { Share2, Copy, Check, Loader2, ExternalLink, Lock } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ShareButton({
   errorId,
   variant = "default",
   isShared = false,
   existingShareId = null,
+  isPrivate = false,
   onShareComplete,
 }) {
   const [isSharing, setIsSharing] = useState(false);
@@ -17,16 +19,18 @@ export default function ShareButton({
       : null
   );
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState(null);
+
+  if (isPrivate) {
+    return null;
+  }
 
   const handleShare = async () => {
     if (!errorId) {
-      setError("Error ID not found");
+      toast.error("Error ID not found");
       return;
     }
 
     setIsSharing(true);
-    setError(null);
 
     try {
       const response = await fetch("/api/share-error", {
@@ -49,13 +53,14 @@ export default function ShareButton({
           });
         }
 
-        await copyToClipboard(newShareUrl); // auto-copy
+        await copyToClipboard(newShareUrl);
+        toast.success("Share link created and copied to clipboard!");
       } else {
-        setError(data.error || "Failed to create share link");
+        toast.error(data.error || "Failed to create share link");
       }
     } catch (err) {
       console.error("Error sharing:", err);
-      setError("Failed to create share link");
+      toast.error("Network error: Failed to create share link");
     } finally {
       setIsSharing(false);
     }
@@ -66,6 +71,9 @@ export default function ShareButton({
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      if (text !== shareUrl) {
+        toast.success("Link copied to clipboard!");
+      }
     } catch {
       const textArea = document.createElement("textarea");
       textArea.value = text;
@@ -75,8 +83,12 @@ export default function ShareButton({
         document.execCommand("copy");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+        if (text !== shareUrl) {
+          toast.success("Link copied to clipboard!");
+        }
       } catch (fallbackErr) {
         console.error("Fallback copy failed:", fallbackErr);
+        toast.error("Failed to copy link");
       }
       document.body.removeChild(textArea);
     }
@@ -116,7 +128,6 @@ export default function ShareButton({
       );
     }
 
-    // default
     return (
       <div className="flex gap-2">
         <button
@@ -155,12 +166,10 @@ export default function ShareButton({
           className={`p-1.5 rounded hover:bg-gray-200 transition ${
             isSharing ? "cursor-not-allowed opacity-50" : "cursor-pointer"
           }`}
-          title={copied ? "Copied!" : "Share"}
+          title="Share"
         >
           {isSharing ? (
             <Loader2 className="w-4 h-4 animate-spin text-gray-600" />
-          ) : copied ? (
-            <Check className="w-4 h-4 text-green-600" />
           ) : (
             <Share2 className="w-4 h-4 text-gray-600" />
           )}
@@ -186,8 +195,6 @@ export default function ShareButton({
           )}
         </button>
       )}
-
-      {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
     </>
   );
 }
