@@ -1,4 +1,9 @@
 export function getClientId(request) {
+  const clientIdHeader = request.headers.get("x-client-id");
+  if (clientIdHeader && clientIdHeader.length >= 16) {
+    return clientIdHeader.replace(/[^a-zA-Z0-9]/g, "").substring(0, 20);
+  }
+
   const forwarded = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
   const userAgent = request.headers.get("user-agent") || "";
@@ -6,8 +11,10 @@ export function getClientId(request) {
   const acceptEncoding = request.headers.get("accept-encoding") || "";
 
   const ip = forwarded?.split(",")[0] || realIp || "unknown";
-  
-  const fingerprint = Buffer.from(userAgent + ip + acceptLanguage + acceptEncoding)
+
+  const fingerprint = Buffer.from(
+    userAgent + ip + acceptLanguage + acceptEncoding
+  )
     .toString("base64")
     .slice(0, 16);
 

@@ -110,6 +110,27 @@ export default function Home() {
     loading: true,
   });
   const [isPrivate, setIsPrivate] = useState(false);
+  const [clientId, setClientId] = useState(null);
+
+  useEffect(() => {
+    const generateClientId = () => {
+      let id = localStorage.getItem("err-explain-client-id");
+
+      if (!id) {
+        // Generate new unique ID
+        id =
+          "client_" +
+          Date.now().toString(36) +
+          "_" +
+          Math.random().toString(36).substr(2, 9);
+        localStorage.setItem("err-explain-client-id", id);
+      }
+
+      setClientId(id);
+    };
+
+    generateClientId();
+  }, []);
 
   // Theme-aware colors
   const getThemeColors = () => {
@@ -258,33 +279,37 @@ export default function Home() {
     };
   };
 
-  useEffect(() => {
-    const fetchRateLimit = async () => {
-      try {
-        const response = await fetch("/api/analyze-status", {
-          method: "GET",
-        });
+  const fetchRateLimit = async () => {
+    try {
+      const headers = clientId ? { "X-Client-ID": clientId } : {};
+      const response = await fetch("/api/analyze-status", {
+        method: "GET",
+        headers,
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          setRateLimit({
-            remaining: data.remaining,
-            maxRequests: data.maxRequests,
-            resetTime: data.resetTime ? new Date(data.resetTime) : null,
-            canAnalyze: data.canAnalyze,
-            loading: false,
-          });
-        } else {
-          setRateLimit((prev) => ({ ...prev, loading: false }));
-        }
-      } catch (error) {
-        console.error("Error fetching rate limit:", error);
+      if (response.ok) {
+        const data = await response.json();
+        setRateLimit({
+          remaining: data.remaining,
+          maxRequests: data.maxRequests,
+          resetTime: data.resetTime ? new Date(data.resetTime) : null,
+          canAnalyze: data.canAnalyze,
+          loading: false,
+        });
+      } else {
         setRateLimit((prev) => ({ ...prev, loading: false }));
       }
-    };
+    } catch (error) {
+      console.error("Error fetching rate limit:", error);
+      setRateLimit((prev) => ({ ...prev, loading: false }));
+    }
+  };
 
-    fetchRateLimit();
-  }, []);
+  useEffect(() => {
+    if (clientId) {
+      fetchRateLimit();
+    }
+  }, [clientId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -372,6 +397,7 @@ export default function Home() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Client-ID": clientId,
         },
         body: JSON.stringify({
           errorMessage: errorMessage.trim(),
