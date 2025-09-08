@@ -2,7 +2,7 @@
 
 # 🪴 Introducing ErrExplain
 
-**Turn cryptic errors into plain English.** 
+**Turn cryptic errors into plain English.**
 
 Instantly analyze programming errors with AI-powered explanations, root cause analysis, and actionable solutions.
 
@@ -13,19 +13,23 @@ Instantly analyze programming errors with AI-powered explanations, root cause an
 - **🔍 Smart Error Analysis** - Paste any error message and get structured explanations
 - **🎯 Root Cause Detection** - Understand what actually caused the error
 - **🛠️ Actionable Solutions** - Step-by-step fixes that actually work
+- **💻 Example Code Generation** - AI generates minimal code that reproduces the exact error
+- **🔐 Privacy Controls** - Choose to exclude sensitive errors from history entirely
+- **🛡️ Auto-Moderation** - Automatically strips API keys, passwords, and sensitive data
+- **🌙 Dark Theme** - Full dark/light mode support throughout the app
 - **🔗 Collaborative Sharing** - Generate shareable links for team debugging
-- **📊 Error History** - Track and analyze your debugging patterns
+- **📊 Error History** - Track and analyze your debugging patterns with charts
 - **⚡ Rate Limiting** - Fair usage with 5 free analyses per day
 - **📱 Mobile Friendly** - Works seamlessly across all devices
 
 ## 🤔 Why ErrExplain?
 
-| Feature | ErrExplain | ChatGPT/Claude | Stack Overflow |
-|---------|------------|----------------|----------------|
-| **Error Focus** | ✅ Specialized for errors | ❌ General purpose | ❌ Manual search |
-| **Structured Output** | ✅ Meaning → Causes → Fixes | ❌ Raw text response | ❌ Mixed quality answers |
-| **Memory & Analytics** | ✅ Dashboard with charts & insights | ❌ Limited conversation memory | ❌ No personal dashboard |
-| **Language Intelligence** | ✅ Top languages, severity tracking | ❌ No pattern recognition | ❌ No personal insights |
+| Feature                   | ErrExplain                          | ChatGPT/Claude                 | Stack Overflow           |
+| ------------------------- | ----------------------------------- | ------------------------------ | ------------------------ |
+| **Error Focus**           | ✅ Specialized for errors           | ❌ General purpose             | ❌ Manual search         |
+| **Structured Output**     | ✅ Meaning → Causes → Fixes         | ❌ Raw text response           | ❌ Mixed quality answers |
+| **Memory & Analytics**    | ✅ Dashboard with charts & insights | ❌ Limited conversation memory | ❌ No personal dashboard |
+| **Language Intelligence** | ✅ Top languages, severity tracking | ❌ No pattern recognition      | ❌ No personal insights  |
 
 ## 🚀 Tech Stack
 
@@ -90,7 +94,7 @@ ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
 
 **Appwrite Collections Setup:**
 
-- **error-submissions**: `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`
+- **error-submissions**: `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`, `exampleCode`, `isPrivate`
 
 ## 🤝 Contributing
 
@@ -101,6 +105,7 @@ ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
 5. Open Pull Request
 
 **Development Guidelines:**
+
 - Follow existing code patterns
 - Test error scenarios thoroughly
 - Maintain responsive design
@@ -111,13 +116,13 @@ ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
 **Love ErrExplain? Help me keep building!**
 
 💚 **$5 / month - Monthly Supporter**  
-Get recognition in the GitHub README under Supporters.  
+Get recognition in the GitHub README under Supporters.
 
 🌟 **$19 / month - Monthly Sponsor**  
-Support growth and get recognition both in the GitHub README **and** on my portfolio (abhivarde.in).  
+Support growth and get recognition both in the GitHub README **and** on my portfolio (abhivarde.in).
 
 🚀 **$49 / month - Featured Sponsor**  
-Premium support with **extra visibility**: README + Portfolio + **promotion on Sync UI**.  
+Premium support with **extra visibility**: README + Portfolio + **promotion on Sync UI**.
 
 [👉 Become a Sponsor](https://github.com/sponsors/AbhiVarde)
 
