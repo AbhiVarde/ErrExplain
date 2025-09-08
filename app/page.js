@@ -19,6 +19,7 @@ import {
   History,
   Square,
   CheckSquare,
+  Lock,
 } from "lucide-react";
 import HistoryDashboard from "../components/HistoryDashboard";
 import ShareButton from "@/components/SharedButton";
@@ -1076,7 +1077,7 @@ export default function Home() {
                           theme === "dark" ? "text-gray-300" : "text-gray-700"
                         }`}
                       >
-                        Keep private
+                        Don't save to history
                       </span>
                     </label>
 
@@ -1366,14 +1367,34 @@ export default function Home() {
                           <RefreshCcw className="w-4 h-4" />
                           Analyze Another Error
                         </button>
-                        {analysis.id && !isPrivate && (
+
+                        {/* Only show share button if analysis has an ID */}
+                        {analysis.id && (
                           <ShareButton
                             errorId={analysis.id}
                             isShared={analysis.isShared}
                             existingShareId={analysis.shareId}
-                            isPrivate={isPrivate}
+                            isPrivate={analysis.isPrivate}
                             onShareComplete={handleShareComplete}
                           />
+                        )}
+
+                        {/* private analyses */}
+                        {analysis.isPrivate && (
+                          <div
+                            className={`text-xs font-medium ${
+                              theme === "dark"
+                                ? "text-[#CDFA8A]"
+                                : "text-[#0E2E28]"
+                            } flex items-center justify-center gap-1 px-3 py-2 rounded-xl border text-center ${
+                              theme === "dark"
+                                ? "border-gray-600 bg-gray-800/30"
+                                : "border-gray-200 bg-gray-50"
+                            }`}
+                          >
+                            <Lock className="w-3 h-3" />
+                            <span>Private analysis</span>
+                          </div>
                         )}
                       </div>
                     )}

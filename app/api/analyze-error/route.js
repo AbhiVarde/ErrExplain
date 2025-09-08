@@ -116,17 +116,21 @@ export async function POST(request) {
     }
 
     const clientId = getClientId(request);
-    const rateLimit = await checkRateLimit(clientId);
 
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        {
-          error: `Daily limit reached (${rateLimit.count}/5 analyses used today).`,
-          remaining: 0,
-          resetTime: rateLimit.resetTime,
-        },
-        { status: 429 }
-      );
+    // Only check rate limit if we're going to save to database (non-private)
+    if (!isPrivate) {
+      const rateLimit = await checkRateLimit(clientId);
+
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            error: `Daily limit reached (${rateLimit.count}/5 analyses used today).`,
+            remaining: 0,
+            resetTime: rateLimit.resetTime,
+          },
+          { status: 429 }
+        );
+      }
     }
 
     if (!process.env.GROQ_API_KEY) {
@@ -153,35 +157,46 @@ export async function POST(request) {
     });
 
     let documentId = null;
-    try {
-      const client = new Client()
-        .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
-        .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID)
-        .setKey(process.env.APPWRITE_API_KEY);
+    let rateLimitUpdate = null;
 
-      const databases = new Databases(client);
+    // Only save to database if NOT private
+    if (!isPrivate) {
+      try {
+        const client = new Client()
+          .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
+          .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID)
+          .setKey(process.env.APPWRITE_API_KEY);
 
-      const document = await databases.createDocument(
-        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
-        process.env.NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID,
-        ID.unique(),
-        {
-          errorMessage: moderatedError.substring(0, 1000),
-          language: language.substring(0, 50),
-          explanation: analysis.explanation,
-          causes: analysis.causes,
-          solutions: analysis.solutions,
-          exampleCode: analysis.exampleCode, 
-          clientId: clientId,
-          severity: analysis.severity,
-          category: analysis.category,
-          isPrivate: isPrivate,
-        }
-      );
+        const databases = new Databases(client);
 
-      documentId = document.$id;
-    } catch (dbError) {
-      console.error("Appwrite save failed:", dbError);
+        const document = await databases.createDocument(
+          process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID,
+          process.env.NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID,
+          ID.unique(),
+          {
+            errorMessage: moderatedError.substring(0, 1000),
+            language: language.substring(0, 50),
+            explanation: analysis.explanation,
+            causes: analysis.causes,
+            solutions: analysis.solutions,
+            exampleCode: analysis.exampleCode,
+            clientId: clientId,
+            severity: analysis.severity,
+            category: analysis.category,
+            isPrivate: false, // Only non-private errors are saved
+          }
+        );
+
+        documentId = document.$id;
+
+        const rateLimit = await checkRateLimit(clientId);
+        rateLimitUpdate = {
+          remaining: rateLimit.remaining,
+          resetTime: rateLimit.resetTime,
+        };
+      } catch (dbError) {
+        console.error("Appwrite save failed:", dbError);
+      }
     }
 
     return NextResponse.json({
@@ -192,10 +207,11 @@ export async function POST(request) {
         id: documentId,
         isShared: false,
         shareId: null,
+        isPrivate: isPrivate,
       },
-      rateLimit: {
-        remaining: rateLimit.remaining - 1,
-        resetTime: rateLimit.resetTime,
+      rateLimit: rateLimitUpdate || {
+        remaining: 5,
+        resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
   } catch (error) {

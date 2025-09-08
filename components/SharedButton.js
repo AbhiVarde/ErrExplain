@@ -22,7 +22,8 @@ export default function ShareButton({
   );
   const [copied, setCopied] = useState(false);
 
-  if (isPrivate) {
+  // Don't render if private or no errorId 
+  if (isPrivate || !errorId) {
     return null;
   }
 

@@ -285,7 +285,11 @@ export default function HistoryDashboard({ onSelectError }) {
   if (history.length === 0) {
     return (
       <div className="text-center py-12">
-        <History className="w-12 h-12 text-[#CDFA8A] mx-auto mb-3" />
+        <History
+          className={`w-12 h-12 ${
+            theme === "dark" ? "text-[#CDFA8A]" : "text-[#0E2E28]"
+          } mx-auto mb-3`}
+        />
         <h3
           className={`text-lg font-medium ${
             theme === "dark" ? "text-white" : "text-gray-900"
