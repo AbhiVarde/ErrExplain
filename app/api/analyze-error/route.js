@@ -117,20 +117,17 @@ export async function POST(request) {
 
     const clientId = getClientId(request);
 
-    // Only check rate limit if we're going to save to database (non-private)
-    if (!isPrivate) {
-      const rateLimit = await checkRateLimit(clientId);
+    const rateLimit = await checkRateLimit(clientId);
 
-      if (!rateLimit.allowed) {
-        return NextResponse.json(
-          {
-            error: `Daily limit reached (${rateLimit.count}/5 analyses used today).`,
-            remaining: 0,
-            resetTime: rateLimit.resetTime,
-          },
-          { status: 429 }
-        );
-      }
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Daily limit reached (${rateLimit.count}/5 analyses used today).`,
+          remaining: 0,
+          resetTime: rateLimit.resetTime,
+        },
+        { status: 429 }
+      );
     }
 
     if (!process.env.GROQ_API_KEY) {
@@ -145,7 +142,6 @@ export async function POST(request) {
     const moderatedError = moderateErrorMessage(errorMessage);
 
     const rawPrompt = process.env.ERROR_ANALYSIS_PROMPT;
-    // Use the moderated error in the prompt
     const finalPrompt = rawPrompt
       .replace(/\{\{language\}\}/g, language)
       .replace(/\{\{errorMessage\}\}/g, moderatedError);
@@ -157,9 +153,8 @@ export async function POST(request) {
     });
 
     let documentId = null;
-    let rateLimitUpdate = null;
 
-    // Only save to database if NOT private
+    // Only save if not private
     if (!isPrivate) {
       try {
         const client = new Client()
@@ -183,17 +178,11 @@ export async function POST(request) {
             clientId: clientId,
             severity: analysis.severity,
             category: analysis.category,
-            isPrivate: false, // Only non-private errors are saved
+            isPrivate: false,
           }
         );
 
         documentId = document.$id;
-
-        const rateLimit = await checkRateLimit(clientId);
-        rateLimitUpdate = {
-          remaining: rateLimit.remaining,
-          resetTime: rateLimit.resetTime,
-        };
       } catch (dbError) {
         console.error("Appwrite save failed:", dbError);
       }
@@ -207,11 +196,11 @@ export async function POST(request) {
         id: documentId,
         isShared: false,
         shareId: null,
-        isPrivate: isPrivate,
+        isPrivate,
       },
-      rateLimit: rateLimitUpdate || {
-        remaining: 5,
-        resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      rateLimit: {
+        remaining: rateLimit.remaining - 1,
+        resetTime: rateLimit.resetTime,
       },
     });
   } catch (error) {
