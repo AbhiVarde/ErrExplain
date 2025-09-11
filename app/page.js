@@ -1217,17 +1217,19 @@ export default function Home() {
                             : "border-gray-200"
                         } justify-center`}
                       >
-                        <button
-                          onClick={handleNewAnalysis}
-                          className={`font-medium py-2 px-4 cursor-pointer rounded-xl flex items-center justify-center gap-2 text-sm transition transform hover:scale-[1.02] active:scale-[0.98]`}
-                          style={{
-                            backgroundColor: colors.primaryBg,
-                            color: colors.primaryText,
-                          }}
-                        >
-                          <RefreshCcw className="w-4 h-4" />
-                          Analyze Another Error
-                        </button>
+                        {rateLimit?.canAnalyze && (
+                          <button
+                            onClick={handleNewAnalysis}
+                            className={`font-medium py-2 px-4 cursor-pointer rounded-xl flex items-center justify-center gap-2 text-sm transition transform hover:scale-[1.02] active:scale-[0.98]`}
+                            style={{
+                              backgroundColor: colors.primaryBg,
+                              color: colors.primaryText,
+                            }}
+                          >
+                            <RefreshCcw className="w-4 h-4" />
+                            Analyze Another Error
+                          </button>
+                        )}
 
                         {analysis.id && (
                           <ShareButton

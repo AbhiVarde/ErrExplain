@@ -44,7 +44,7 @@ export default function ShareButton({
           isShared: true,
         });
 
-        await copyToClipboard(newShareUrl, true); // mark as share
+        await copyToClipboard(newShareUrl, true); 
       } else {
         toast.error("Failed to create share link");
       }

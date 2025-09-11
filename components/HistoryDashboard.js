@@ -11,6 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
   History,
+  Trash2,
+  MoreVertical,
 } from "lucide-react";
 import {
   LineChart,
@@ -76,6 +78,8 @@ export default function HistoryDashboard({ onSelectError }) {
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [error, setError] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [deletingItems, setDeletingItems] = useState(new Set());
 
   const fetchHistory = async () => {
     try {
@@ -111,6 +115,20 @@ export default function HistoryDashboard({ onSelectError }) {
     fetchHistory();
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown && !event.target.closest(".dropdown-container")) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openDropdown]);
+
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -141,14 +159,37 @@ export default function HistoryDashboard({ onSelectError }) {
     });
   };
 
-  const handleDeleteItem = async (historyId) => {
+  const handleDeleteItem = async (historyId, errorMessage) => {
+    setDeletingItems((prev) => new Set([...prev, historyId]));
+    setOpenDropdown(null);
+
     try {
       await deleteHistoryItem(historyId);
-      toast.success("History item deleted");
-      fetchHistory();
+
+      setHistory((prev) => prev.filter((item) => item.id !== historyId));
+      toast.success("Error analysis deleted");
+
+      window.location.reload();
     } catch (err) {
       console.error("Error deleting history item:", err);
-      toast.error(err.message || "Failed to delete history item");
+      toast.error(err.message || "Failed to delete analysis");
+      fetchHistory();
+    } finally {
+      setDeletingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(historyId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleSelectError = (item) => {
+    if (onSelectError) {
+      onSelectError({
+        errorMessage: item.errorMessage,
+        language: item.language,
+        existingAnalysis: item.analysis,
+      });
     }
   };
 
@@ -595,20 +636,36 @@ export default function HistoryDashboard({ onSelectError }) {
           {history.map((item) => {
             const isExpanded = expandedItems.has(item.id);
             const severityConfig = getSeverityConfig(item.severity);
+            const isDeleting = deletingItems.has(item.id);
 
             return (
               <div
                 key={item.id}
-                className={`rounded-xl border transition overflow-hidden ${
+                className={`rounded-xl border transition relative ${
+                  isDeleting ? "opacity-50 pointer-events-none" : ""
+                } ${
                   theme === "dark"
                     ? "border-gray-600 bg-gray-800/30"
                     : "border-gray-200 bg-white"
                 }`}
               >
+                {/* Deleting overlay */}
+                {isDeleting && (
+                  <div className="absolute rounded-xl inset-0 bg-black/60 flex items-center justify-center z-10">
+                    <div className="flex items-center gap-2 text-sm font-medium text-white">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Deleting...</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Header */}
                 <div className="p-2 sm:p-3">
                   <div className="flex items-start justify-between gap-2 sm:gap-3">
-                    <div className="flex-1 min-w-0">
+                    <div
+                      className="flex-1 min-w-0 cursor-pointer"
+                      onClick={() => handleSelectError(item)}
+                    >
                       <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 flex-wrap">
                         <span
                           className={`text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-lg sm:rounded-xl ${
@@ -672,7 +729,7 @@ export default function HistoryDashboard({ onSelectError }) {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col sm:flex-row items-center gap-1">
+                    <div className="flex flex-col sm:flex-row items-center gap-1 relative">
                       {!item.isPrivate && (
                         <ShareButton
                           errorId={item.id}
@@ -683,32 +740,81 @@ export default function HistoryDashboard({ onSelectError }) {
                           className="p-1.5 sm:p-1"
                         />
                       )}
-                      <button
-                        onClick={() => toggleExpanded(item.id)}
-                        className={`p-1.5 sm:p-1 rounded-xl transition cursor-pointer flex-shrink-0 ${
-                          theme === "dark"
-                            ? "hover:bg-gray-700"
-                            : "hover:bg-gray-200"
-                        }`}
-                      >
-                        {isExpanded ? (
-                          <ChevronUp
+
+                      {/* More options dropdown */}
+                      <div className="dropdown-container relative">
+                        <button
+                          onClick={() =>
+                            setOpenDropdown(
+                              openDropdown === item.id ? null : item.id
+                            )
+                          }
+                          className={`p-1.5 sm:p-1 rounded-xl transition cursor-pointer flex-shrink-0 ${
+                            theme === "dark"
+                              ? "hover:bg-gray-700"
+                              : "hover:bg-gray-200"
+                          }`}
+                        >
+                          <MoreVertical
                             className={`w-4 h-4 ${
                               theme === "dark"
                                 ? "text-gray-400"
                                 : "text-gray-600"
                             }`}
                           />
-                        ) : (
-                          <ChevronDown
-                            className={`w-4 h-4 ${
+                        </button>
+
+                        {/* Dropdown menu */}
+                        {openDropdown === item.id && (
+                          <div
+                            className={`absolute right-0 top-full mt-1 ${
                               theme === "dark"
-                                ? "text-gray-400"
-                                : "text-gray-600"
-                            }`}
-                          />
+                                ? "bg-gray-800 border-gray-600"
+                                : "bg-white border-gray-200"
+                            } border rounded-lg shadow-lg z-50 min-w-[120px]`}
+                          >
+                            <button
+                              onClick={() => toggleExpanded(item.id)}
+                              className={`w-full px-3 py-2 text-xs text-left transition cursor-pointer flex items-center gap-2 ${
+                                theme === "dark"
+                                  ? "hover:bg-gray-700 text-gray-300"
+                                  : "hover:bg-gray-50 text-gray-700"
+                              } first:rounded-t-lg`}
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <ChevronUp className="w-3 h-3" />
+                                  <span>Collapse</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-3 h-3" />
+                                  <span>Expand</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                handleDeleteItem(item.id, item.errorMessage)
+                              }
+                              disabled={isDeleting}
+                              className={`w-full px-3 py-2 text-xs text-left transition cursor-pointer flex items-center gap-2 ${
+                                theme === "dark"
+                                  ? "hover:bg-red-900/30 text-red-400"
+                                  : "hover:bg-red-50 text-red-600"
+                              } last:rounded-b-lg border-t ${
+                                theme === "dark"
+                                  ? "border-gray-600"
+                                  : "border-gray-200"
+                              }`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
                         )}
-                      </button>
+                      </div>
                     </div>
                   </div>
                 </div>
