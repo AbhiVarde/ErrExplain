@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import {
@@ -30,8 +28,8 @@ import {
 } from "recharts";
 import ShareButton from "./SharedButton";
 import { toast } from "sonner";
+import { getUserHistory, deleteHistoryItem } from "@/services/apiService";
 
-// Constants
 const CHART_COLORS = [
   "#3b82f6",
   "#10b981",
@@ -82,8 +80,8 @@ export default function HistoryDashboard({ onSelectError }) {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/user-history");
-      const data = await response.json();
+      setError(null);
+      const data = await getUserHistory();
 
       if (data.success) {
         setHistory(data.history || []);
@@ -96,15 +94,14 @@ export default function HistoryDashboard({ onSelectError }) {
             timeline: [],
           }
         );
-        setError(null);
       } else {
         toast.error("Failed to load history");
         setError("Failed to load history");
       }
     } catch (err) {
       console.error("Error fetching history:", err);
-      toast.error("Network error: Failed to load history");
-      setError("Failed to load history");
+      toast.error(err.message || "Failed to load history");
+      setError(err.message || "Failed to load history");
     } finally {
       setLoading(false);
     }
@@ -114,7 +111,6 @@ export default function HistoryDashboard({ onSelectError }) {
     fetchHistory();
   }, []);
 
-  // Utility functions
   const formatDate = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -140,13 +136,20 @@ export default function HistoryDashboard({ onSelectError }) {
   const toggleExpanded = (id) => {
     setExpandedItems((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
+      newSet.has(id) ? newSet.delete(id) : newSet.add(id);
       return newSet;
     });
+  };
+
+  const handleDeleteItem = async (historyId) => {
+    try {
+      await deleteHistoryItem(historyId);
+      toast.success("History item deleted");
+      fetchHistory();
+    } catch (err) {
+      console.error("Error deleting history item:", err);
+      toast.error(err.message || "Failed to delete history item");
+    }
   };
 
   const getChartStyle = () => ({
@@ -158,7 +161,6 @@ export default function HistoryDashboard({ onSelectError }) {
     color: theme === "dark" ? "#f3f4f6" : "#374151",
   });
 
-  // Data preparation
   const topLanguages = Object.entries(stats.languages)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
@@ -187,7 +189,6 @@ export default function HistoryDashboard({ onSelectError }) {
     date: day.label,
   }));
 
-  // Stats cards configuration
   const statsCards = [
     {
       label: "Total",
@@ -227,7 +228,7 @@ export default function HistoryDashboard({ onSelectError }) {
     },
   ];
 
-  // Loading state
+  // Loading
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -247,7 +248,7 @@ export default function HistoryDashboard({ onSelectError }) {
     );
   }
 
-  // Error state
+  // Error
   if (error) {
     return (
       <div className="text-center py-8">
@@ -281,7 +282,7 @@ export default function HistoryDashboard({ onSelectError }) {
     );
   }
 
-  // Empty state
+  // Empty
   if (history.length === 0) {
     return (
       <div className="text-center py-12">
@@ -308,7 +309,7 @@ export default function HistoryDashboard({ onSelectError }) {
     );
   }
 
-  // Chart components
+  // Charts
   const TimelineChart = () =>
     timelineData.length > 0 && (
       <div
@@ -463,7 +464,6 @@ export default function HistoryDashboard({ onSelectError }) {
       </div>
     );
 
-  // Analysis section component
   const AnalysisSection = ({ title, items, bgColor, textColor, dotColor }) =>
     items?.length > 0 && (
       <div className={bgColor}>
@@ -496,7 +496,6 @@ export default function HistoryDashboard({ onSelectError }) {
       </div>
     );
 
-  // Code section component
   const CodeSection = ({ title, code, bgColor, textColor, dotColor }) =>
     code && (
       <div className={bgColor}>
@@ -575,7 +574,7 @@ export default function HistoryDashboard({ onSelectError }) {
             } flex items-center gap-2`}
           >
             <Clock className="w-4 h-4" />
-            Recent Errors
+            Recent Errors ({history.length})
           </h3>
           <button
             onClick={fetchHistory}
@@ -634,7 +633,7 @@ export default function HistoryDashboard({ onSelectError }) {
                         </span>
                       </div>
 
-                      {/* Category for mobile - show below badges */}
+                      {/* Category (mobile) */}
                       <div
                         className={`text-xs mb-1.5 sm:hidden ${
                           theme === "dark" ? "text-gray-400" : "text-gray-500"
@@ -643,7 +642,7 @@ export default function HistoryDashboard({ onSelectError }) {
                         {item.category}
                       </div>
 
-                      {/* Error message with better mobile handling */}
+                      {/* Error message */}
                       <div
                         className={`text-xs font-mono px-2 py-1.5 rounded-lg sm:rounded-xl leading-relaxed ${
                           theme === "dark"
@@ -667,12 +666,7 @@ export default function HistoryDashboard({ onSelectError }) {
                       >
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span className="hidden sm:inline">
-                            {formatDate(item.timestamp)}
-                          </span>
-                          <span className="sm:hidden">
-                            {formatDate(item.timestamp, "short")}
-                          </span>
+                          <span>{formatDate(item.timestamp)}</span>
                         </span>
                       </div>
                     </div>
@@ -719,7 +713,7 @@ export default function HistoryDashboard({ onSelectError }) {
                   </div>
                 </div>
 
-                {/* Expanded Content */}
+                {/* Expanded */}
                 {isExpanded && item.analysis && (
                   <div
                     className={`px-2 sm:px-3 pb-2 sm:pb-3 border-t ${

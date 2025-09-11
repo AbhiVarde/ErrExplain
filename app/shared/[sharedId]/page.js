@@ -45,6 +45,7 @@ const accordionItems = [
   },
 ];
 
+// Shared Error Page Component
 export default function SharedErrorPage() {
   const params = useParams();
   const { theme } = useTheme();
@@ -63,18 +64,13 @@ export default function SharedErrorPage() {
         setLoading(false);
         return;
       }
-
       try {
         const response = await fetch(
           `/api/shared-error?shareId=${params.sharedId}`
         );
         const result = await response.json();
-
-        if (response.ok && result.success) {
-          setData(result.data);
-        } else {
-          setError(result.error || "Failed to load shared error");
-        }
+        if (response.ok && result.success) setData(result.data);
+        else setError(result.error || "Failed to load shared error");
       } catch (err) {
         console.error("Error fetching shared error:", err);
         setError("Network error: Failed to load shared error");
@@ -82,18 +78,13 @@ export default function SharedErrorPage() {
         setLoading(false);
       }
     };
-
     fetchSharedError();
   }, [params.sharedId]);
 
   const toggleAccordion = (id) => {
     setOpenAccordions((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
+      newSet.has(id) ? newSet.delete(id) : newSet.add(id);
       return newSet;
     });
   };
@@ -103,7 +94,7 @@ export default function SharedErrorPage() {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       const textArea = document.createElement("textarea");
       textArea.value = window.location.href;
       document.body.appendChild(textArea);
@@ -183,41 +174,26 @@ export default function SharedErrorPage() {
 
   const getIconColor = (color) => {
     const configs = {
-      blue: {
-        light: "text-blue-600",
-        dark: "text-blue-400",
-      },
-      orange: {
-        light: "text-orange-600",
-        dark: "text-orange-400",
-      },
-      green: {
-        light: "text-green-600",
-        dark: "text-green-400",
-      },
-      purple: {
-        light: "text-purple-600",
-        dark: "text-purple-400",
-      },
+      blue: { light: "text-blue-600", dark: "text-blue-400" },
+      orange: { light: "text-orange-600", dark: "text-orange-400" },
+      green: { light: "text-green-600", dark: "text-green-400" },
+      purple: { light: "text-purple-600", dark: "text-purple-400" },
     };
     const config = configs[color] || configs.blue;
     return theme === "dark" ? config.dark : config.light;
   };
 
-  const formatDate = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("en-US", {
+  const formatDate = (timestamp) =>
+    new Date(timestamp).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
   const renderAccordionContent = (item) => {
     if (!data?.analysis) return null;
-
     switch (item.id) {
       case "explanation":
         return data.analysis.explanation ? (
@@ -229,9 +205,8 @@ export default function SharedErrorPage() {
             {data.analysis.explanation}
           </div>
         ) : null;
-
       case "causes":
-        return data.analysis.causes?.length > 0 ? (
+        return data.analysis.causes?.length ? (
           <ul className="space-y-3">
             {data.analysis.causes.map((cause, i) => (
               <li
@@ -254,9 +229,8 @@ export default function SharedErrorPage() {
             ))}
           </ul>
         ) : null;
-
       case "solutions":
-        return data.analysis.solutions?.length > 0 ? (
+        return data.analysis.solutions?.length ? (
           <ul className="space-y-3">
             {data.analysis.solutions.map((solution, i) => (
               <li
@@ -279,7 +253,6 @@ export default function SharedErrorPage() {
             ))}
           </ul>
         ) : null;
-
       case "exampleCode":
         return data.analysis.exampleCode ? (
           <div>
@@ -302,16 +275,19 @@ export default function SharedErrorPage() {
             </p>
           </div>
         ) : null;
-
       default:
         return null;
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Loader2 className="w-6 h-6 animate-spin text-[#CDFA8A] mb-3" />
+        <Loader2
+          className={`w-6 h-6 animate-spin ${
+            theme === "dark" ? "text-[#CDFA8A]" : "text-[#0E2E28]"
+          } mb-3`}
+        />
         <p
           className={`text-sm ${
             theme === "dark" ? "text-gray-400" : "text-gray-600"
@@ -321,9 +297,8 @@ export default function SharedErrorPage() {
         </p>
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <AlertTriangle
@@ -349,17 +324,14 @@ export default function SharedErrorPage() {
           href="/"
           className="inline-flex items-center gap-2 bg-[#CDFA8A] hover:bg-[#B8E678] text-[#0E2E28] font-medium py-2 px-4 rounded-xl transition cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Go Home
+          <ArrowLeft className="w-4 h-4" /> Go Home
         </Link>
       </div>
     );
-  }
 
   return (
     <div className="px-4 py-10">
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-4">
           <h1
             className={`text-2xl lg:text-3xl font-semibold tracking-wide mb-2 ${
@@ -377,7 +349,6 @@ export default function SharedErrorPage() {
           </p>
         </div>
 
-        {/* Main Content */}
         <div
           className={`backdrop-blur-md rounded-2xl border shadow-lg overflow-hidden ${
             theme === "dark" ? "border-gray-600" : "border-gray-200"
@@ -385,7 +356,6 @@ export default function SharedErrorPage() {
         >
           <div className="p-4 md:p-6">
             <div className="space-y-6">
-              {/* Error Info Header */}
               <div
                 className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border ${
                   theme === "dark"
@@ -420,7 +390,6 @@ export default function SharedErrorPage() {
                 </span>
               </div>
 
-              {/* Error Message */}
               <div
                 className={`p-4 rounded-xl border ${
                   theme === "dark"
@@ -446,14 +415,11 @@ export default function SharedErrorPage() {
                 </pre>
               </div>
 
-              {/* Accordion Analysis */}
               <div className="space-y-4">
                 {accordionItems.map((item) => {
                   const isOpen = openAccordions.has(item.id);
                   const hasContent = renderAccordionContent(item);
-
                   if (!hasContent) return null;
-
                   return (
                     <div
                       key={item.id}
@@ -490,7 +456,6 @@ export default function SharedErrorPage() {
                           } ${isOpen ? "rotate-180" : ""}`}
                         />
                       </button>
-
                       {isOpen && (
                         <div className="px-4 pb-4">
                           <div className="py-3">
@@ -503,7 +468,6 @@ export default function SharedErrorPage() {
                 })}
               </div>
 
-              {/* Action Buttons */}
               <div
                 className={`flex flex-col sm:flex-row gap-3 pt-4 border-t justify-center ${
                   theme === "dark" ? "border-gray-600" : "border-gray-200"
@@ -516,7 +480,6 @@ export default function SharedErrorPage() {
                   <ArrowLeft className="w-4 h-4" />
                   Analyze Your Own Errors
                 </Link>
-
                 <button
                   onClick={copyToClipboard}
                   className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl transition ${

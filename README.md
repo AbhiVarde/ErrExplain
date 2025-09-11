@@ -77,19 +77,12 @@ Open [http://localhost:3000](http://localhost:3000) and start analyzing errors.
 Create `.env.local` with these variables:
 
 ```env
-# Groq AI
-GROQ_API_KEY=your_groq_api_key
-
 # Appwrite
 APPWRITE_API_KEY=your_appwrite_api_key
 NEXT_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
 NEXT_PUBLIC_APPWRITE_DATABASE_ID=your_database_id
 NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID=your_collection_id
-
-# App Configuration
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-ERROR_ANALYSIS_PROMPT=your_custom_ai_prompt
 ```
 
 **Appwrite Collections Setup:**

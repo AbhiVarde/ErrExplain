@@ -21,10 +21,11 @@ import {
   CheckSquare,
   Lock,
 } from "lucide-react";
-import HistoryDashboard from "../components/HistoryDashboard";
+import HistoryDashboard from "@/components/HistoryDashboard";
 import ShareButton from "@/components/SharedButton";
-import { getSampleErrors, detectLanguage } from "./api/utils";
 import { toast } from "sonner";
+import { analyzeError, checkRateLimit } from "@/services/apiService";
+import { getSampleErrors, detectLanguage } from "@/utils/clientUtils";
 
 const languages = [
   "JavaScript",
@@ -110,29 +111,8 @@ export default function Home() {
     loading: true,
   });
   const [isPrivate, setIsPrivate] = useState(false);
-  const [clientId, setClientId] = useState(null);
 
-  useEffect(() => {
-    const generateClientId = () => {
-      let id = localStorage.getItem("err-explain-client-id");
-
-      if (!id) {
-        // Generate new unique ID
-        id =
-          "client_" +
-          Date.now().toString(36) +
-          "_" +
-          Math.random().toString(36).substr(2, 9);
-        localStorage.setItem("err-explain-client-id", id);
-      }
-
-      setClientId(id);
-    };
-
-    generateClientId();
-  }, []);
-
-  // Theme-aware colors
+  // Get theme-aware color palette
   const getThemeColors = () => {
     if (theme === "dark") {
       return {
@@ -156,149 +136,28 @@ export default function Home() {
 
   const colors = getThemeColors();
 
-  // [Keep all existing validation and utility functions unchanged]
+  // Validate error message input
   const validateErrorMessage = (text) => {
     if (!text || text.trim().length < 8) {
       return {
         isValid: false,
         message: "Please enter at least 8 characters.",
-        suggestion: null,
       };
     }
-
-    const cleanText = text.trim();
-    let score = 0;
-
-    // comprehensive patterns
-    const patterns = [
-      // generic
-      /\b(error|exception|failed|failure)\s*[:]/i,
-      /\b(unhandled exception)\b/i,
-      /\bnullreferenceexception\b/i,
-      /\bargument(exception|outofrange)\b/i,
-      /\bvalue does not fall within\b/i,
-
-      // JS / Python / Java / PHP
-      /\b(typeerror|referenceerror|syntaxerror|nameerror|valueerror|keyerror|importerror)\b/i,
-      /at\s+.*:\d+:\d+/i,
-      /line\s+\d+/i,
-      /:\d+:\d+/,
-      /cannot\s+(read|find|resolve|access)/i,
-      /is\s+not\s+(defined|found|a\s+function)/i,
-      /unexpected\s+(token|end)/i,
-      /module\s+not\s+found/i,
-
-      // compiler/runtime codes
-      /\bCS\d{4}\b/i, // C# compiler error codes
-      /\.cs\(\d+,\d+\)/i, // C# file + line
-      /\.java:\d+/i,
-      /\.py[\s:"]/i,
-      /\.php.*line\s+\d+/i,
-      /\.cpp:\d+/i,
-      /\.ts(x)?:\d+/i,
-
-      // HTTP/server
-      /\b(404|500|502|503)\b/i,
-
-      // file extensions as fallback
-      /\.(js|py|java|php|cpp|cs|rb|go|rs|swift|kt|sql|html|css)[\s:"]/i,
-
-      // C# specific patterns
-      /system\.\w+exception/i,
-      /program\.cs:\s*line\s*\d+/i,
-      /string\.isnullorempty/i,
-
-      // Ruby specific
-      /\.rb:\d+/i,
-      /undefined method.*for/i,
-      /nomethoderror/i,
-      /loaderror.*cannot load/i,
-      /nameerror.*undefined local variable/i,
-
-      // Go specific
-      /\.go:\d+/i,
-      /panic:/i,
-      /goroutine \d+/i,
-      /undefined:.*fmt\./i,
-      /cannot use.*as type/i,
-
-      // SQL specific
-      /ERROR \d+/i,
-      /duplicate entry/i,
-      /syntax error.*near/i,
-      /table.*doesn.*exist/i,
-
-      // Linux/Bash specific
-      /permission denied/i,
-      /command not found/i,
-      /segmentation fault/i,
-      /bash:.*command not found/i,
-      /usr\/bin\/env/i,
-      /mkdir:.*permission denied/i,
-
-      // Docker specific
-      /failed to solve/i,
-      /dockerfile/i,
-      /executor failed running/i,
-      /pull access denied/i,
-      /killed by sigkill/i,
-
-      // Git specific
-      /fatal:.*git/i,
-      /not a git repository/i,
-      /local changes would be overwritten/i,
-      /conflict.*content/i,
-      /automatic merge failed/i,
-
-      // Swift specific
-      /thread.*fatal error/i,
-      /viewcontroller\.swift/i,
-      /exc_bad_access/i,
-      /index out of range/i,
-      /appdelegate\.swift/i,
-
-      // Appwrite specific
-      /appwriteexception/i,
-      /document.*not.*found/i,
-      /collection.*not.*found/i,
-    ];
-
-    patterns.forEach((pattern) => {
-      if (pattern.test(cleanText)) score++;
-    });
-
-    if (score >= 1) {
-      return { isValid: true };
-    }
-
-    return {
-      isValid: false,
-      message: "This doesn't look like an error message.",
-      suggestion:
-        "Error messages usually contain keywords like 'Error:', 'TypeError:', 'Exception:', 'CS1002', or stack traces with line numbers.",
-    };
+    return { isValid: true };
   };
 
+  // Fetch current rate limit status
   const fetchRateLimit = async () => {
     try {
-      const headers = clientId ? { "X-Client-ID": clientId } : {};
-      const response = await fetch("/api/analyze-status", {
-        method: "GET",
-        headers,
+      const data = await checkRateLimit();
+      setRateLimit({
+        remaining: data.remaining || 5,
+        maxRequests: data.maxRequests || 5,
+        resetTime: data.resetTime ? new Date(data.resetTime) : null,
+        canAnalyze: data.canAnalyze !== false,
+        loading: false,
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRateLimit({
-          remaining: data.remaining,
-          maxRequests: data.maxRequests,
-          resetTime: data.resetTime ? new Date(data.resetTime) : null,
-          canAnalyze: data.canAnalyze,
-          loading: false,
-        });
-      } else {
-        setRateLimit((prev) => ({ ...prev, loading: false }));
-      }
     } catch (error) {
       console.error("Error fetching rate limit:", error);
       setRateLimit((prev) => ({ ...prev, loading: false }));
@@ -306,11 +165,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (clientId) {
-      fetchRateLimit();
-    }
-  }, [clientId]);
+    fetchRateLimit();
+  }, []);
 
+  // Handle clicks outside dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isDropdownOpen && !event.target.closest(".relative")) {
@@ -324,6 +182,7 @@ export default function Home() {
     };
   }, [isDropdownOpen]);
 
+  // Validate error message and detect language mismatches
   useEffect(() => {
     if (errorMessage.trim()) {
       const validation = validateErrorMessage(errorMessage);
@@ -336,7 +195,6 @@ export default function Home() {
       } else {
         setValidationError("");
 
-        // Auto-detect language and warn about mismatches
         const detectedLang = detectLanguage(errorMessage);
         if (
           detectedLang &&
@@ -357,6 +215,7 @@ export default function Home() {
     }
   }, [errorMessage, selectedLanguage]);
 
+  // Submit error for analysis
   const handleSubmit = async () => {
     if (!errorMessage.trim()) {
       toast.error("Please enter an error message.");
@@ -365,12 +224,10 @@ export default function Home() {
 
     const validation = validateErrorMessage(errorMessage);
     if (!validation.isValid) {
-      const errorMsg =
-        validation.message +
-        (validation.suggestion ? `\n\n${validation.suggestion}` : "");
-      toast.error(errorMsg);
+      toast.error(validation.message);
       return;
     }
+
     if (!rateLimit.canAnalyze) {
       toast.error(
         "Daily limit reached (5 analyses per day). Please try again tomorrow."
@@ -386,56 +243,22 @@ export default function Home() {
     setValidationError("");
 
     try {
-      // Simulate step-by-step loading
       for (let i = 0; i < accordionItems.length; i++) {
         setLoadingSteps((prev) => new Set([...prev, accordionItems[i].id]));
         await new Promise((resolve) => setTimeout(resolve, 800));
       }
 
-      // Make actual API call
-      const response = await fetch("/api/analyze-error", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Client-ID": clientId,
-        },
-        body: JSON.stringify({
-          errorMessage: errorMessage.trim(),
-          language: selectedLanguage,
-          isPrivate: isPrivate,
-        }),
+      const data = await analyzeError({
+        errorMessage: errorMessage.trim(),
+        language: selectedLanguage,
+        isPrivate: isPrivate,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          toast.error(data.error);
-          setRateLimit((prev) => ({
-            ...prev,
-            remaining: data.remaining || 0,
-            canAnalyze: false,
-            resetTime: data.resetTime
-              ? new Date(data.resetTime)
-              : prev.resetTime,
-          }));
-        } else if (response.status === 400 && data.suggestion) {
-          toast.error(`${data.error}\n\n${data.suggestion}`);
-        } else {
-          toast.error(
-            data.error || "Failed to analyze error. Please try again."
-          );
-        }
-        setActiveTab("input");
-        return;
-      }
 
       if (data.success && data.analysis) {
         setAnalysis(data.analysis);
         setLoadingSteps(new Set());
         toast.success("Error analysis completed!");
 
-        // Update rate limit info from API response
         if (data.rateLimit) {
           setRateLimit((prev) => ({
             remaining: data.rateLimit.remaining,
@@ -448,7 +271,6 @@ export default function Home() {
           }));
         }
 
-        // Auto-open first accordion
         setTimeout(() => {
           setOpenAccordions(new Set(["explanation"]));
         }, 300);
@@ -458,13 +280,26 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Error:", err);
-      toast.error("Network error. Please check your connection and try again.");
+
+      if (err.message.includes("Daily limit reached")) {
+        toast.error(err.message);
+        setRateLimit((prev) => ({
+          ...prev,
+          remaining: 0,
+          canAnalyze: false,
+        }));
+      } else if (err.message.includes("does not look like an error message")) {
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to analyze error. Please try again.");
+      }
       setActiveTab("input");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Toggle accordion sections
   const toggleAccordion = (id) => {
     if (loadingSteps.has(id) || isLoading) return;
 
@@ -479,6 +314,7 @@ export default function Home() {
     });
   };
 
+  // Insert random sample error
   const insertSampleError = () => {
     if (!rateLimit.canAnalyze) return;
 
@@ -487,6 +323,7 @@ export default function Home() {
     setErrorMessage(randomError);
   };
 
+  // Get severity-based styling
   const getSeverityColor = (severity) => {
     switch (severity) {
       case "low":
@@ -500,6 +337,7 @@ export default function Home() {
     }
   };
 
+  // Get accordion color scheme
   const getAccordionColor = (color, isOpen, theme) => {
     if (theme === "dark") {
       const darkColors = {
@@ -519,7 +357,6 @@ export default function Home() {
       return darkColors[color] || darkColors.blue;
     }
 
-    // Light mode colors (existing)
     const lightColors = {
       blue: isOpen
         ? "border-blue-200 bg-blue-50"
@@ -537,6 +374,7 @@ export default function Home() {
     return lightColors[color] || lightColors.blue;
   };
 
+  // Get icon color for accordion items
   const getIconColor = (color) => {
     const colors = {
       blue: "text-blue-600",
@@ -547,6 +385,7 @@ export default function Home() {
     return colors[color] || colors.blue;
   };
 
+  // Reset form for new analysis
   const handleNewAnalysis = () => {
     setActiveTab("input");
     setAnalysis(null);
@@ -556,6 +395,7 @@ export default function Home() {
     setValidationError("");
   };
 
+  // Handle share completion
   const handleShareComplete = (shareData) => {
     setAnalysis((prevAnalysis) => ({
       ...prevAnalysis,
@@ -564,6 +404,7 @@ export default function Home() {
     }));
   };
 
+  // Handle error selection from history
   const handleHistoryErrorSelect = ({
     errorMessage,
     language,
@@ -580,32 +421,39 @@ export default function Home() {
     }
   };
 
+  // Render accordion content based on analysis type
   const renderAccordionContent = (item) => {
     if (!analysis) return null;
+
+    const baseText = `text-sm leading-relaxed ${
+      theme === "dark" ? "text-gray-200" : "text-gray-700"
+    }`;
+
+    const badgeClasses = (dark, light) =>
+      `flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+        theme === "dark" ? dark : light
+      }`;
 
     switch (item.id) {
       case "explanation":
         return analysis.explanation ? (
-          <div className={`text-sm text-gray-700 leading-relaxed`}>
-            {analysis.explanation}
-          </div>
+          <div className={baseText}>{analysis.explanation}</div>
         ) : null;
 
       case "causes":
         return analysis.causes?.length > 0 ? (
           <ul className="space-y-3">
             {analysis.causes.map((cause, i) => (
-              <li key={i} className={`flex gap-3 text-sm text-gray-700`}>
+              <li key={i} className={`flex gap-3 ${baseText}`}>
                 <span
-                  className={`flex-shrink-0 w-6 h-6 ${
-                    theme === "dark"
-                      ? "bg-orange-800 text-orange-200"
-                      : "bg-orange-100 text-orange-600"
-                  } rounded-full flex items-center justify-center text-xs font-medium`}
+                  className={badgeClasses(
+                    "bg-orange-800 text-orange-200",
+                    "bg-orange-100 text-orange-600"
+                  )}
                 >
                   {i + 1}
                 </span>
-                <span className="leading-relaxed">{cause}</span>
+                <span>{cause}</span>
               </li>
             ))}
           </ul>
@@ -615,17 +463,16 @@ export default function Home() {
         return analysis.solutions?.length > 0 ? (
           <ul className="space-y-3">
             {analysis.solutions.map((solution, i) => (
-              <li key={i} className={`flex gap-3 text-sm text-gray-700`}>
+              <li key={i} className={`flex gap-3 ${baseText}`}>
                 <span
-                  className={`flex-shrink-0 w-6 h-6 ${
-                    theme === "dark"
-                      ? "bg-green-800 text-green-200"
-                      : "bg-green-100 text-green-600"
-                  } rounded-full flex items-center justify-center text-xs font-medium`}
+                  className={badgeClasses(
+                    "bg-green-800 text-green-200",
+                    "bg-green-100 text-green-600"
+                  )}
                 >
                   {i + 1}
                 </span>
-                <span className="leading-relaxed">{solution}</span>
+                <span>{solution}</span>
               </li>
             ))}
           </ul>
@@ -635,16 +482,18 @@ export default function Home() {
         return analysis.exampleCode ? (
           <div>
             <pre
-              className={`text-sm text-gray-700 font-mono ${
-                theme === "dark" ? "bg-gray-800 text-white" : "bg-white"
-              } p-3 rounded border overflow-x-auto whitespace-pre-wrap leading-relaxed`}
+              className={`font-mono p-3 rounded border overflow-x-auto whitespace-pre-wrap leading-relaxed ${
+                theme === "dark"
+                  ? "bg-gray-800 text-gray-100 border-gray-700"
+                  : "bg-white text-gray-700 border-gray-300"
+              }`}
             >
               <code>{analysis.exampleCode}</code>
             </pre>
             <p
-              className={`text-xs ${
-                theme === "dark" ? "text-gray-500" : "text-gray-500"
-              } mt-2`}
+              className={`text-xs mt-2 ${
+                theme === "dark" ? "text-gray-400" : "text-gray-500"
+              }`}
             >
               This code demonstrates how the error occurs. Compare with your
               code to understand the issue.
@@ -657,6 +506,7 @@ export default function Home() {
     }
   };
 
+  // Format reset time for display
   const formatResetTime = (resetTime) => {
     if (!resetTime) return "";
     const now = new Date();
@@ -702,7 +552,6 @@ export default function Home() {
             Instantly analyze errors • Clear explanations • Actionable fixes
           </p>
 
-          {/* Rate limit indicator */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-3 text-xs text-center sm:text-left">
             {rateLimit.loading ? (
               <div
@@ -754,7 +603,6 @@ export default function Home() {
         </div>
 
         <div className="backdrop-blur-md rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
-          {/* Tab Navigation */}
           <div
             className={`border-b ${
               theme === "dark"
@@ -767,7 +615,6 @@ export default function Home() {
                 theme === "dark" ? "divide-gray-600" : "divide-gray-200"
               }`}
             >
-              {/* Input Tab */}
               <button
                 onClick={() => setActiveTab("input")}
                 className={`group flex-1 min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out
@@ -794,7 +641,6 @@ export default function Home() {
                 <span className="sm:hidden truncate">Input</span>
               </button>
 
-              {/* Output Tab */}
               <button
                 onClick={() =>
                   (analysis || isLoading) && setActiveTab("output")
@@ -830,7 +676,6 @@ export default function Home() {
                 <span className="sm:hidden truncate">Results</span>
               </button>
 
-              {/* History Tab */}
               <button
                 onClick={() => setActiveTab("history")}
                 className={`group flex-1 min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out
@@ -859,11 +704,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Tab Content */}
           <div className="p-4 md:p-6">
             {activeTab === "input" && (
               <div className="space-y-6">
-                {/* Rate limit warning if limit reached */}
                 {!rateLimit.canAnalyze && !rateLimit.loading && (
                   <div
                     className={`p-4 rounded-xl ${
@@ -905,7 +748,6 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Language Selector */}
                 <div>
                   <label
                     className={`block font-medium text-sm ${
@@ -988,7 +830,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Error Input */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label
@@ -1076,7 +917,6 @@ export default function Home() {
                         )}
                     </div>
 
-                    {/* Private Analysis Toggle */}
                     <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer">
                       <input
                         type="checkbox"
@@ -1184,7 +1024,6 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Submit */}
                 <button
                   onClick={handleSubmit}
                   disabled={
@@ -1239,7 +1078,6 @@ export default function Home() {
               <div className="space-y-6">
                 {analysis || isLoading ? (
                   <>
-                    {/* Header */}
                     {analysis && (
                       <div
                         className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-2 ${
@@ -1269,7 +1107,7 @@ export default function Home() {
                           </div>
                         </div>
                         <span
-                          className={`px-3 py-1 rounded-full border text-sm font-medium ${getSeverityColor(
+                          className={`px-3 py-1 text-center rounded-full border text-sm font-medium ${getSeverityColor(
                             analysis.severity
                           )}`}
                         >
@@ -1278,7 +1116,6 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* Accordion */}
                     <div className="space-y-4">
                       {accordionItems.map((item) => {
                         const isOpen = openAccordions.has(item.id);
@@ -1292,7 +1129,8 @@ export default function Home() {
                             key={item.id}
                             className={`rounded-xl border cursor-pointer transition ${getAccordionColor(
                               item.color,
-                              isOpen
+                              isOpen,
+                              theme
                             )} ${isDisabled ? "opacity-50" : ""}`}
                           >
                             <button
@@ -1313,9 +1151,7 @@ export default function Home() {
                                 <div>
                                   <h3
                                     className={`font-medium ${
-                                      isOpen
-                                        ? "text-gray-900"
-                                        : theme === "dark"
+                                      theme === "dark"
                                         ? "text-white"
                                         : "text-gray-900"
                                     }`}
@@ -1373,7 +1209,6 @@ export default function Home() {
                       })}
                     </div>
 
-                    {/* Action Buttons */}
                     {analysis && !isLoading && (
                       <div
                         className={`flex flex-col sm:flex-row gap-3 pt-4 border-t ${
@@ -1394,7 +1229,6 @@ export default function Home() {
                           Analyze Another Error
                         </button>
 
-                        {/* Only show share button if analysis has an ID */}
                         {analysis.id && (
                           <ShareButton
                             errorId={analysis.id}
@@ -1405,7 +1239,6 @@ export default function Home() {
                           />
                         )}
 
-                        {/* private analyses */}
                         {analysis.isPrivate && (
                           <div
                             className={`text-xs font-medium ${

@@ -1,9 +1,8 @@
-"use client";
-
 import { useState } from "react";
 import { useTheme } from "../contexts/ThemeContext";
-import { Share2, Copy, Check, Loader2, ExternalLink, Lock } from "lucide-react";
+import { Share2, Copy, Check, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { shareError } from "@/services/apiService";
 
 export default function ShareButton({
   errorId,
@@ -22,10 +21,7 @@ export default function ShareButton({
   );
   const [copied, setCopied] = useState(false);
 
-  // Don't render if private or no errorId 
-  if (isPrivate || !errorId) {
-    return null;
-  }
+  if (isPrivate || !errorId) return null;
 
   const handleShare = async () => {
     if (!errorId) {
@@ -36,72 +32,63 @@ export default function ShareButton({
     setIsSharing(true);
 
     try {
-      const response = await fetch("/api/share-error", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ errorId }),
-      });
+      const result = await shareError(errorId);
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        const newShareUrl = data.shareUrl;
+      if (result.success) {
+        const newShareUrl = result.shareUrl;
         setShareUrl(newShareUrl);
 
-        if (onShareComplete) {
-          onShareComplete({
-            shareId: data.shareId,
-            shareUrl: newShareUrl,
-            isShared: true,
-          });
-        }
+        onShareComplete?.({
+          shareId: result.shareId,
+          shareUrl: newShareUrl,
+          isShared: true,
+        });
 
-        await copyToClipboard(newShareUrl);
-        toast.success("Share link created and copied to clipboard!");
+        await copyToClipboard(newShareUrl, true); // mark as share
       } else {
-        toast.error(data.error || "Failed to create share link");
+        toast.error("Failed to create share link");
       }
     } catch (err) {
       console.error("Error sharing:", err);
-      toast.error("Network error: Failed to create share link");
+      toast.error(err.message || "Failed to create share link");
     } finally {
       setIsSharing(false);
     }
   };
 
-  const copyToClipboard = async (text) => {
+  const copyToClipboard = async (text, fromShare = false) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      if (text !== shareUrl) {
-        toast.success("Link copied to clipboard!");
-      }
     } catch {
+      // fallback copy
       const textArea = document.createElement("textarea");
       textArea.value = text;
       document.body.appendChild(textArea);
       textArea.select();
       try {
         document.execCommand("copy");
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-        if (text !== shareUrl) {
-          toast.success("Link copied to clipboard!");
-        }
       } catch (fallbackErr) {
         console.error("Fallback copy failed:", fallbackErr);
         toast.error("Failed to copy link");
+        document.body.removeChild(textArea);
+        return;
       }
       document.body.removeChild(textArea);
     }
+
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+
+    if (fromShare) {
+      toast.success("Share link created and copied to clipboard!");
+    } else {
+      toast.success("Link copied to clipboard!");
+    }
   };
 
-  const openInNewTab = () => {
-    if (shareUrl) window.open(shareUrl, "_blank");
-  };
+  const openInNewTab = () => shareUrl && window.open(shareUrl, "_blank");
 
-  // If already shared, show copy + open controls
+  // Already shared → show copy + open
   if (shareUrl) {
     if (variant === "icon") {
       return (
@@ -190,52 +177,49 @@ export default function ShareButton({
     );
   }
 
-  return (
-    <>
-      {variant === "icon" ? (
-        <button
-          onClick={handleShare}
-          disabled={isSharing}
-          className={`p-1.5 rounded transition ${
-            isSharing ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-          } ${
-            theme === "dark"
-              ? "hover:bg-gray-700 text-gray-400"
-              : "hover:bg-gray-200 text-gray-600"
-          }`}
-          title="Share"
-        >
-          {isSharing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Share2 className="w-4 h-4" />
-          )}
-        </button>
+  // Not yet shared → show share button
+  return variant === "icon" ? (
+    <button
+      onClick={handleShare}
+      disabled={isSharing}
+      className={`p-1.5 rounded transition ${
+        isSharing ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+      } ${
+        theme === "dark"
+          ? "hover:bg-gray-700 text-gray-400"
+          : "hover:bg-gray-200 text-gray-600"
+      }`}
+      title="Share"
+    >
+      {isSharing ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
       ) : (
-        <button
-          onClick={handleShare}
-          disabled={isSharing}
-          className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium border rounded-xl transition ${
-            isSharing ? "cursor-not-allowed" : "cursor-pointer"
-          } ${
-            theme === "dark"
-              ? "border-gray-600 hover:bg-gray-700 text-gray-300"
-              : "border-gray-300 hover:bg-gray-50 text-gray-700"
-          }`}
-        >
-          {isSharing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Creating Link...
-            </>
-          ) : (
-            <>
-              <Share2 className="w-4 h-4" />
-              Share
-            </>
-          )}
-        </button>
+        <Share2 className="w-4 h-4" />
       )}
-    </>
+    </button>
+  ) : (
+    <button
+      onClick={handleShare}
+      disabled={isSharing}
+      className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium border rounded-xl transition ${
+        isSharing ? "cursor-not-allowed" : "cursor-pointer"
+      } ${
+        theme === "dark"
+          ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+          : "border-gray-300 hover:bg-gray-50 text-gray-700"
+      }`}
+    >
+      {isSharing ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Creating Link...
+        </>
+      ) : (
+        <>
+          <Share2 className="w-4 h-4" />
+          Share
+        </>
+      )}
+    </button>
   );
 }

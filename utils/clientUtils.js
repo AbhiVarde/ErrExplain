@@ -1,148 +1,60 @@
-export function getClientId(request) {
-  const clientIdHeader = request.headers.get("x-client-id");
-  if (clientIdHeader && clientIdHeader.length >= 16) {
-    return clientIdHeader.replace(/[^a-zA-Z0-9]/g, "").substring(0, 20);
+let globalClientId = null;
+
+// Get a consistent client ID across requests.
+export async function getConsistentClientId() {
+  if (globalClientId) {
+    return globalClientId;
   }
 
-  const forwarded = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
-  const userAgent = request.headers.get("user-agent") || "";
-  const acceptLanguage = request.headers.get("accept-language") || "";
-  const acceptEncoding = request.headers.get("accept-encoding") || "";
+  try {
+    const rateData = await checkRateLimit();
+    if (rateData.clientId) {
+      globalClientId = rateData.clientId;
+      return globalClientId;
+    }
+  } catch (error) {
+    console.error("Failed to get clientId from rate limit check:", error);
+  }
 
-  const ip = forwarded?.split(",")[0] || realIp || "unknown";
+  try {
+    const { functions } = await import("../utils/appwriteClient");
+    const FUNCTION_ID = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_ID;
 
-  const fingerprint = Buffer.from(
-    userAgent + ip + acceptLanguage + acceptEncoding
-  )
-    .toString("base64")
-    .slice(0, 16);
+    const response = await functions.createExecution(
+      FUNCTION_ID,
+      JSON.stringify({ action: "GET_CLIENT_ID" }),
+      false
+    );
 
-  return fingerprint.replace(/[^a-zA-Z0-9]/g, "").substring(0, 20);
+    const result = JSON.parse(response.responseBody);
+    if (result.success && result.clientId) {
+      globalClientId = result.clientId;
+      return globalClientId;
+    }
+  } catch (error) {
+    console.error("Failed to get clientId from function:", error);
+  }
+
+  return null;
 }
 
-// Updated validation function to match client-side logic exactly
-export function isValidError(text) {
-  if (!text || text.trim().length < 8) return false;
+// Check rate limit status from Appwrite function.
+async function checkRateLimit() {
+  const { functions } = await import("../utils/appwriteClient");
+  const FUNCTION_ID = process.env.NEXT_PUBLIC_APPWRITE_FUNCTION_ID;
 
-  const cleanText = text.trim();
-  let score = 0;
+  const response = await functions.createExecution(
+    FUNCTION_ID,
+    JSON.stringify({ action: "GET_STATUS" }),
+    false
+  );
 
-  // Comprehensive patterns matching client-side validation
-  const patterns = [
-    // Generic error patterns
-    /\b(error|exception|failed|failure)\s*[:]/i,
-    /\b(unhandled exception)\b/i,
-    /\bnullreferenceexception\b/i,
-    /\bargument(exception|outofrange)\b/i,
-    /\bvalue does not fall within\b/i,
-
-    // JavaScript/Python/Java/PHP common errors
-    /\b(typeerror|referenceerror|syntaxerror|nameerror|valueerror|keyerror|importerror)\b/i,
-    /at\s+.*:\d+:\d+/i,
-    /line\s+\d+/i,
-    /:\d+:\d+/,
-    /cannot\s+(read|find|resolve|access)/i,
-    /is\s+not\s+(defined|found|a\s+function)/i,
-    /unexpected\s+(token|end)/i,
-    /module\s+not\s+found/i,
-
-    // Compiler/runtime error codes
-    /\bCS\d{4}\b/i, // C# compiler error codes
-    /\.cs\(\d+,\d+\)/i, // C# file + line
-    /\.java:\d+/i,
-    /\.py[\s:"]/i,
-    /\.php.*line\s+\d+/i,
-    /\.cpp:\d+/i,
-    /\.ts(x)?:\d+/i,
-
-    // HTTP/server errors
-    /\b(404|500|502|503)\b/i,
-
-    // File extensions in error context
-    /\.(js|py|java|php|cpp|cs|rb|go|rs|swift|kt|sql|html|css)[\s:"]/i,
-
-    // C# specific patterns
-    /system\.\w+exception/i,
-    /program\.cs:\s*line\s*\d+/i,
-    /string\.isnullorempty/i,
-
-    // Ruby specific
-    /\.rb:\d+/i,
-    /undefined method.*for/i,
-    /nomethoderror/i,
-    /loaderror.*cannot load/i,
-    /nameerror.*undefined local variable/i,
-
-    // Go specific
-    /\.go:\d+/i,
-    /panic:/i,
-    /goroutine \d+/i,
-    /undefined:.*fmt\./i,
-    /cannot use.*as type/i,
-
-    // SQL specific
-    /ERROR \d+/i,
-    /duplicate entry/i,
-    /syntax error.*near/i,
-    /table.*doesn.*exist/i,
-
-    // Linux/Bash specific
-    /permission denied/i,
-    /command not found/i,
-    /segmentation fault/i,
-    /bash:.*command not found/i,
-    /usr\/bin\/env/i,
-    /mkdir:.*permission denied/i,
-
-    // Docker specific
-    /failed to solve/i,
-    /dockerfile/i,
-    /executor failed running/i,
-    /pull access denied/i,
-    /killed by sigkill/i,
-
-    // Git specific
-    /fatal:.*git/i,
-    /not a git repository/i,
-    /local changes would be overwritten/i,
-    /conflict.*content/i,
-    /automatic merge failed/i,
-
-    // Swift specific
-    /thread.*fatal error/i,
-    /viewcontroller\.swift/i,
-    /exc_bad_access/i,
-    /index out of range/i,
-    /appdelegate\.swift/i,
-
-    // Appwrite specific
-    /appwriteexception/i,
-    /document.*not.*found/i,
-    /collection.*not.*found/i,
-
-    // Rust specific - IMPORTANT: This was missing in original server-side validation
-    /\berror\[E\d+\]/i,
-    /\.rs:\d+/i,
-    /thread.*panicked/i,
-    /cargo.*error/i,
-    /borrow of moved value/i,
-    /mismatched types/i,
-    /expected.*found/i,
-  ];
-
-  patterns.forEach((pattern) => {
-    if (pattern.test(cleanText)) score++;
-  });
-
-  // If we found at least one strong pattern, it's likely a valid error
-  return score >= 1;
+  return JSON.parse(response.responseBody);
 }
 
-// Simple language detection from error
+// Detect programming language or environment from an error message.
 export function detectLanguage(errorText) {
   const indicators = {
-    // Check more specific languages first
     Appwrite: [
       /appwriteexception/i,
       /document.*not.*found/i,
@@ -291,7 +203,6 @@ export function detectLanguage(errorText) {
     ],
   };
 
-  // Score each language based on indicators found
   const scores = {};
   for (const [lang, patterns] of Object.entries(indicators)) {
     scores[lang] = patterns.reduce(
@@ -306,7 +217,7 @@ export function detectLanguage(errorText) {
   return Object.keys(scores).find((lang) => scores[lang] === maxScore);
 }
 
-// Language-specific sample errors
+// Get language-specific sample errors.
 export function getSampleErrors(language) {
   const samples = {
     JavaScript: [
