@@ -89,6 +89,8 @@ NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID=your_collection_id
 
 - **error-submissions**: `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`, `exampleCode`, `isPrivate`
 
+- **daily-usage**: `clientId`, `date`, `usageCount`
+
 ## 🤝 Contributing
 
 1. Fork the repository
