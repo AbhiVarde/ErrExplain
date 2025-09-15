@@ -93,19 +93,6 @@ export default function RootLayout({ children }) {
             <Footer />
           </div>
 
-          <a
-            href="https://peerlist.io/abhivarde/project/errexplain"
-            target="_blank"
-            rel="noreferrer"
-            className="fixed bottom-4 right-4 z-50"
-          >
-            <img
-              src="https://peerlist.io/api/v1/projects/embed/PRJH6A78RJDBARLRMFG9M66KLPDB7Q?showUpvote=false&theme=light"
-              alt="ErrExplain on Peerlist"
-              className="h-[60px] w-auto shadow-lg rounded-md"
-            />
-          </a>
-
           <Toaster position="bottom-center" richColors closeButton />
         </ThemeProvider>
       </body>
