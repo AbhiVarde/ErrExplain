@@ -34,7 +34,7 @@ Instantly analyze programming errors with AI-powered explanations, root cause an
 ## 🚀 Tech Stack
 
 - **Frontend**: Next.js 15+, React 19, Tailwind CSS 4, clsx
-- **Backend**: Next.js API Routes, Node.js, node-appwrite
+- **Backend**: Appwrite Functions, Next.js API Routes, Node.js, node-appwrite
 - **Database**: Appwrite Database
 - **AI**: Groq (Llama 4 Maverick)
 - **Vercel AI SDK**: ai, @ai-sdk/groq
