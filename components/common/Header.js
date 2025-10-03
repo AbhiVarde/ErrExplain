@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Terminal, Github, Sun, Moon } from "lucide-react";
+import { Terminal, Github, Sun, Moon, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -60,6 +60,15 @@ export default function Header() {
           </Link>
 
           <div className="flex items-center gap-2">
+            <a
+              href="https://dev.to/abhivarde/errexplain-turning-confusing-errors-into-clear-fixes-42dk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--primary-bg)] hover:opacity-90 transition"
+              title="Read the ErrExplain blog"
+            >
+              <BookOpen className="text-[var(--primary-text)]" size={16} />
+            </a>
             <button
               onClick={toggleTheme}
               className="flex cursor-pointer items-center justify-center w-8 h-8 rounded-full bg-[var(--primary-bg)] hover:opacity-90 transition"
