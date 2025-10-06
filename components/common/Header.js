@@ -17,11 +17,12 @@ export default function Header() {
           }`}
         >
           <span className="mx-4">
-            🚀 Built during{" "}
+            🚀 This project was built during{" "}
             <span className="font-medium">Appwrite Sites Hackathon</span>
           </span>
+
           <span className="mx-4">
-            🌐 Explore more projects:{" "}
+            ⚡{" "}
             <a
               href="https://syncui.design"
               target="_blank"
@@ -30,9 +31,13 @@ export default function Header() {
               onMouseEnter={() => setPaused(true)}
               onMouseLeave={() => setPaused(false)}
             >
-              SyncUI
+              Sync UI
             </a>{" "}
-            &{" "}
+            (75+ GitHub stars, used in 70+ countries)
+          </span>
+
+          <span className="mx-4">
+            🚀{" "}
             <a
               href="https://idea-tracker-v2.appwrite.network"
               target="_blank"
@@ -43,7 +48,22 @@ export default function Header() {
             >
               Idea Tracker
             </a>{" "}
-            (75+ GitHub ⭐, users in 65+ countries)
+            (Appwrite Project of the Month)
+          </span>
+
+          <span className="mx-4">
+            ✨{" "}
+            <a
+              href="https://sendra.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:opacity-80"
+              onMouseEnter={() => setPaused(true)}
+              onMouseLeave={() => setPaused(false)}
+            >
+              Sendra
+            </a>{" "}
+            (Resend MCP hackathon project – Appwrite + Resend + Vercel)
           </span>
         </div>
       </div>
