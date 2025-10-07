@@ -13,10 +13,11 @@ Instantly analyze programming errors with AI-powered explanations, root cause an
 - **🔍 Smart Error Analysis** - Paste any error message and get structured explanations
 - **🎯 Root Cause Detection** - Understand what actually caused the error
 - **🛠️ Actionable Solutions** - Step-by-step fixes that actually work
-- **💻 Example Code Generation** - AI generates minimal code that reproduces the exact error
-- **🔐 Privacy Controls** - Choose to exclude sensitive errors from history entirely
-- **🛡️ Auto-Moderation** - Automatically strips API keys, passwords, and sensitive data
-- **🌙 Dark Theme** - Full dark/light mode support throughout the app
+- **💻 AI-Generated Minimal Code** - Reproduce the exact error with minimal example code
+- **🗑️ Delete Errors from History** - Remove unwanted entries from your personal dashboard
+- **🔐 Privacy Controls & Auto-Moderation** - Strip API keys, passwords, and other secrets; optionally mark entries private
+- **🌙 Full Dark Theme** - Dark/light mode support throughout the app
+- **💬 Voting System** - Users can vote helpful/not helpful on solutions
 - **🔗 Collaborative Sharing** - Generate shareable links for team debugging
 - **📊 Error History** - Track and analyze your debugging patterns with charts
 - **⚡ Rate Limiting** - Fair usage with 5 free analyses per day
@@ -90,6 +91,8 @@ NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID=your_collection_id
 - **error-submissions**: `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`, `exampleCode`, `isPrivate`
 
 - **daily-usage**: `clientId`, `date`, `usageCount`
+
+- **solution-votes**: `shareId`, `solutionIndex`, `voteType`, `userFingerprint`
 
 ## 🤝 Contributing
 
