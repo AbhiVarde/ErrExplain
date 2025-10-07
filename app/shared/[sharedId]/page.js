@@ -17,6 +17,7 @@ import {
   Copy,
   Check,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const accordionItems = [
   {
@@ -49,6 +50,7 @@ const accordionItems = [
 export default function SharedErrorPage() {
   const params = useParams();
   const { theme } = useTheme();
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,6 +58,8 @@ export default function SharedErrorPage() {
     new Set(["explanation"])
   );
   const [copied, setCopied] = useState(false);
+  const [voteStats, setVoteStats] = useState({});
+  const [userVotes, setUserVotes] = useState({});
 
   useEffect(() => {
     const fetchSharedError = async () => {
@@ -69,8 +73,20 @@ export default function SharedErrorPage() {
           `/api/shared-error?shareId=${params.sharedId}`
         );
         const result = await response.json();
-        if (response.ok && result.success) setData(result.data);
-        else setError(result.error || "Failed to load shared error");
+        if (response.ok && result.success) {
+          setData(result.data);
+
+          // Fetch votes for this shared error
+          try {
+            const { getSolutionVotes } = await import("@/services/apiService");
+            const votes = await getSolutionVotes(params.sharedId);
+            setVoteStats(votes || {});
+          } catch (voteErr) {
+            console.error("Failed to fetch votes:", voteErr);
+          }
+        } else {
+          setError(result.error || "Failed to load shared error");
+        }
       } catch (err) {
         console.error("Error fetching shared error:", err);
         setError("Network error: Failed to load shared error");
@@ -192,6 +208,35 @@ export default function SharedErrorPage() {
       minute: "2-digit",
     });
 
+  const handleVote = async (solutionIndex, voteType) => {
+    try {
+      const { voteSolution } = await import("@/services/apiService");
+
+      const votes = await voteSolution({
+        shareId: params.sharedId,
+        solutionIndex,
+        voteType,
+      });
+
+      // Update local state
+      setUserVotes((prev) => ({
+        ...prev,
+        [solutionIndex]: voteType,
+      }));
+
+      // Update vote stats
+      setVoteStats((prev) => ({
+        ...prev,
+        [solutionIndex]: votes,
+      }));
+
+      toast.success("Vote recorded!");
+    } catch (err) {
+      console.error("Vote failed:", err);
+      toast.error(err.message || "Failed to record vote");
+    }
+  };
+
   const renderAccordionContent = (item) => {
     if (!data?.analysis) return null;
     switch (item.id) {
@@ -231,26 +276,78 @@ export default function SharedErrorPage() {
         ) : null;
       case "solutions":
         return data.analysis.solutions?.length ? (
-          <ul className="space-y-3">
-            {data.analysis.solutions.map((solution, i) => (
-              <li
-                key={i}
-                className={`flex gap-3 text-sm ${
-                  theme === "dark" ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
-                <span
-                  className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                    theme === "dark"
-                      ? "bg-green-800 text-green-200"
-                      : "bg-green-100 text-green-600"
+          <ul className="space-y-4">
+            {data.analysis.solutions.map((solution, i) => {
+              const voteData = voteStats[i];
+              const hasVoted = userVotes[i];
+
+              return (
+                <li
+                  key={i}
+                  className={`flex flex-col gap-2 text-sm ${
+                    theme === "dark" ? "text-gray-300" : "text-gray-700"
                   }`}
                 >
-                  {i + 1}
-                </span>
-                <span className="leading-relaxed">{solution}</span>
-              </li>
-            ))}
+                  <div className="flex gap-3">
+                    <span
+                      className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                        theme === "dark"
+                          ? "bg-green-800 text-green-200"
+                          : "bg-green-100 text-green-600"
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="leading-relaxed">{solution}</span>
+                  </div>
+
+                  {/* Vote buttons */}
+                  <div className="flex flex-wrap items-center gap-2 ml-9">
+                    <button
+                      onClick={() => handleVote(i, "helpful")}
+                      className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition cursor-pointer ${
+                        hasVoted === "helpful"
+                          ? theme === "dark"
+                            ? "bg-green-800/40 text-green-300 border border-green-600"
+                            : "bg-green-100 text-green-700 border border-green-300"
+                          : theme === "dark"
+                          ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      👍 Helpful{" "}
+                      {voteData?.helpful > 0 && `(${voteData.helpful})`}
+                    </button>
+
+                    <button
+                      onClick={() => handleVote(i, "not_helpful")}
+                      className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition cursor-pointer ${
+                        hasVoted === "not_helpful"
+                          ? theme === "dark"
+                            ? "bg-red-800/40 text-red-300 border border-red-600"
+                            : "bg-red-100 text-red-700 border border-red-300"
+                          : theme === "dark"
+                          ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      👎 Not Helpful{" "}
+                      {voteData?.notHelpful > 0 && `(${voteData.notHelpful})`}
+                    </button>
+
+                    {voteData?.total > 0 && (
+                      <span
+                        className={`text-xs ${
+                          theme === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
+                        {voteData.percentage}% helpful
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         ) : null;
       case "exampleCode":
