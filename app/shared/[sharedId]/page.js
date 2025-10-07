@@ -237,146 +237,6 @@ export default function SharedErrorPage() {
     }
   };
 
-  const renderAccordionContent = (item) => {
-    if (!data?.analysis) return null;
-    switch (item.id) {
-      case "explanation":
-        return data.analysis.explanation ? (
-          <div
-            className={`text-sm leading-relaxed ${
-              theme === "dark" ? "text-gray-300" : "text-gray-700"
-            }`}
-          >
-            {data.analysis.explanation}
-          </div>
-        ) : null;
-      case "causes":
-        return data.analysis.causes?.length ? (
-          <ul className="space-y-3">
-            {data.analysis.causes.map((cause, i) => (
-              <li
-                key={i}
-                className={`flex gap-3 text-sm ${
-                  theme === "dark" ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
-                <span
-                  className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                    theme === "dark"
-                      ? "bg-orange-800 text-orange-200"
-                      : "bg-orange-100 text-orange-600"
-                  }`}
-                >
-                  {i + 1}
-                </span>
-                <span className="leading-relaxed">{cause}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null;
-      case "solutions":
-        return data.analysis.solutions?.length ? (
-          <ul className="space-y-4">
-            {data.analysis.solutions.map((solution, i) => {
-              const voteData = voteStats[i];
-              const hasVoted = userVotes[i];
-
-              return (
-                <li
-                  key={i}
-                  className={`flex flex-col gap-2 text-sm ${
-                    theme === "dark" ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  <div className="flex gap-3">
-                    <span
-                      className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                        theme === "dark"
-                          ? "bg-green-800 text-green-200"
-                          : "bg-green-100 text-green-600"
-                      }`}
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="leading-relaxed">{solution}</span>
-                  </div>
-
-                  {/* Vote buttons */}
-                  <div className="flex flex-wrap items-center gap-2 ml-9">
-                    <button
-                      onClick={() => handleVote(i, "helpful")}
-                      className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition cursor-pointer ${
-                        hasVoted === "helpful"
-                          ? theme === "dark"
-                            ? "bg-green-800/40 text-green-300 border border-green-600"
-                            : "bg-green-100 text-green-700 border border-green-300"
-                          : theme === "dark"
-                          ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                    >
-                      👍 Helpful{" "}
-                      {voteData?.helpful > 0 && `(${voteData.helpful})`}
-                    </button>
-
-                    <button
-                      onClick={() => handleVote(i, "not_helpful")}
-                      className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition cursor-pointer ${
-                        hasVoted === "not_helpful"
-                          ? theme === "dark"
-                            ? "bg-red-800/40 text-red-300 border border-red-600"
-                            : "bg-red-100 text-red-700 border border-red-300"
-                          : theme === "dark"
-                          ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                    >
-                      👎 Not Helpful{" "}
-                      {voteData?.notHelpful > 0 && `(${voteData.notHelpful})`}
-                    </button>
-
-                    {voteData?.total > 0 && (
-                      <span
-                        className={`text-xs ${
-                          theme === "dark" ? "text-gray-400" : "text-gray-500"
-                        }`}
-                      >
-                        {voteData.percentage}% helpful
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null;
-      case "exampleCode":
-        return data.analysis.exampleCode ? (
-          <div>
-            <pre
-              className={`text-sm font-mono p-3 rounded border overflow-x-auto whitespace-pre-wrap leading-relaxed ${
-                theme === "dark"
-                  ? "text-gray-200 bg-gray-900 border-gray-600"
-                  : "text-gray-700 bg-white border-gray-300"
-              }`}
-            >
-              <code>{data.analysis.exampleCode}</code>
-            </pre>
-            <p
-              className={`text-xs mt-2 ${
-                theme === "dark" ? "text-gray-500" : "text-gray-500"
-              }`}
-            >
-              This code demonstrates how the error occurs. Compare with your
-              code to understand the issue.
-            </p>
-          </div>
-        ) : null;
-      default:
-        return null;
-    }
-  };
-
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -426,6 +286,193 @@ export default function SharedErrorPage() {
       </div>
     );
 
+  const renderAccordionContent = (item) => {
+    if (!data?.analysis) return null;
+    switch (item.id) {
+      case "explanation":
+        return data.analysis.explanation ? (
+          <div
+            className={`text-sm leading-relaxed ${
+              theme === "dark" ? "text-gray-300" : "text-gray-700"
+            }`}
+          >
+            {data.analysis.explanation}
+          </div>
+        ) : null;
+
+      case "causes":
+        return data.analysis.causes?.length ? (
+          <ul className="space-y-3">
+            {data.analysis.causes.map((cause, i) => (
+              <li
+                key={i}
+                className={`flex gap-3 text-sm ${
+                  theme === "dark" ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                <span
+                  className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                    theme === "dark"
+                      ? "bg-orange-800 text-orange-200"
+                      : "bg-orange-100 text-orange-600"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="leading-relaxed">{cause}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null;
+
+      case "solutions":
+        return data.analysis.solutions?.length ? (
+          <ul className="space-y-3">
+            {data.analysis.solutions.map((solution, i) => (
+              <li
+                key={i}
+                className={`flex gap-3 text-sm ${
+                  theme === "dark" ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                <span
+                  className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                    theme === "dark"
+                      ? "bg-green-800 text-green-200"
+                      : "bg-green-100 text-green-600"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="leading-relaxed">{solution}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null;
+
+      case "exampleCode":
+        return data.analysis.exampleCode ? (
+          <div>
+            <pre
+              className={`text-sm font-mono p-3 rounded border overflow-x-auto whitespace-pre-wrap leading-relaxed ${
+                theme === "dark"
+                  ? "text-gray-200 bg-gray-900 border-gray-600"
+                  : "text-gray-700 bg-white border-gray-300"
+              }`}
+            >
+              <code>{data.analysis.exampleCode}</code>
+            </pre>
+            <p
+              className={`text-xs mt-2 ${
+                theme === "dark" ? "text-gray-500" : "text-gray-500"
+              }`}
+            >
+              This code demonstrates how the error occurs. Compare with your
+              code to understand the issue.
+            </p>
+          </div>
+        ) : null;
+
+      default:
+        return null;
+    }
+  };
+
+  const VotingSection = () => {
+    if (!data?.analysis?.solutions?.length) return null;
+
+    return (
+      <div
+        className={`p-4 rounded-xl border ${
+          theme === "dark"
+            ? "bg-green-900/20 border-green-700"
+            : "bg-green-50 border-green-200"
+        }`}
+      >
+        <h3
+          className={`text-sm font-semibold mb-3 flex items-center gap-2 ${
+            theme === "dark" ? "text-green-300" : "text-green-800"
+          }`}
+        >
+          <span className="text-lg">🗳️</span>
+          Was this helpful?
+        </h3>
+
+        <div className="space-y-3">
+          {data.analysis.solutions.map((solution, i) => {
+            const voteData = voteStats[i];
+            const hasVoted = userVotes[i];
+
+            return (
+              <div
+                key={i}
+                className={`p-2.5 rounded-lg border ${
+                  theme === "dark"
+                    ? "bg-gray-800/50 border-gray-600"
+                    : "bg-white border-gray-200"
+                }`}
+              >
+                <div
+                  className={`text-xs font-medium mb-2 ${
+                    theme === "dark" ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Solution {i + 1}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleVote(i, "helpful")}
+                    disabled={false}
+                    className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition cursor-pointer font-medium ${
+                      hasVoted === "helpful"
+                        ? theme === "dark"
+                          ? "bg-green-700 text-green-100 border border-green-600"
+                          : "bg-green-200 text-green-800 border border-green-400"
+                        : theme === "dark"
+                        ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                    }`}
+                  >
+                    👍 Helpful{" "}
+                    {voteData?.helpful > 0 && `(${voteData.helpful})`}
+                  </button>
+
+                  <button
+                    onClick={() => handleVote(i, "not_helpful")}
+                    disabled={false}
+                    className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition cursor-pointer font-medium ${
+                      hasVoted === "not_helpful"
+                        ? theme === "dark"
+                          ? "bg-red-700 text-red-100 border border-red-600"
+                          : "bg-red-200 text-red-800 border border-red-400"
+                        : theme === "dark"
+                        ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                    }`}
+                  >
+                    👎 Not Helpful
+                    {voteData?.notHelpful > 0 && `(${voteData.notHelpful})`}
+                  </button>
+
+                  {voteData?.total > 0 && (
+                    <span
+                      className={`text-xs font-medium ml-auto ${
+                        theme === "dark" ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
+                      {voteData.percentage}% helpful ({voteData.total})
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="px-4 py-10">
       <div className="max-w-3xl mx-auto">
@@ -457,7 +504,7 @@ export default function SharedErrorPage() {
                 className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border ${
                   theme === "dark"
                     ? "bg-gray-800/60 border-gray-600"
-                    : "bg-white/60 border-gray-200"
+                    : "bg-white/60 border-[#e6e6e6]"
                 }`}
               >
                 <div>
@@ -565,6 +612,9 @@ export default function SharedErrorPage() {
                 })}
               </div>
 
+              <VotingSection />
+
+              
               <div
                 className={`flex flex-col sm:flex-row gap-3 pt-4 border-t justify-center ${
                   theme === "dark" ? "border-gray-600" : "border-gray-200"
