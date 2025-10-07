@@ -168,16 +168,15 @@ export async function deleteHistoryItem(historyId) {
   }
 }
 
-// Vote on a solution
-export async function voteSolution(shareId, solutionIndex, voteType) {
+// Vote on a solution - FIXED VERSION
+export async function voteSolution(shareId, voteType) {
   try {
     const response = await functions.createExecution(
       FUNCTION_ID,
       JSON.stringify({
         action: "VOTE_SOLUTION",
-        shareId,
-        solutionIndex,
-        voteType,
+        shareId: shareId,
+        voteType: voteType,
       }),
       false,
       undefined,

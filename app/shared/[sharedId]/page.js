@@ -16,6 +16,8 @@ import {
   ArrowLeft,
   Copy,
   Check,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,7 +48,6 @@ const accordionItems = [
   },
 ];
 
-// Shared Error Page Component
 export default function SharedErrorPage() {
   const params = useParams();
   const { theme } = useTheme();
@@ -58,8 +59,9 @@ export default function SharedErrorPage() {
     new Set(["explanation"])
   );
   const [copied, setCopied] = useState(false);
-  const [voteStats, setVoteStats] = useState({});
-  const [userVotes, setUserVotes] = useState({});
+  const [voteStats, setVoteStats] = useState(null);
+  const [userVote, setUserVote] = useState(null);
+  const [votingLoading, setVotingLoading] = useState(false);
 
   useEffect(() => {
     const fetchSharedError = async () => {
@@ -80,7 +82,7 @@ export default function SharedErrorPage() {
           try {
             const { getSolutionVotes } = await import("@/services/apiService");
             const votes = await getSolutionVotes(params.sharedId);
-            setVoteStats(votes || {});
+            setVoteStats(votes || null);
           } catch (voteErr) {
             console.error("Failed to fetch votes:", voteErr);
           }
@@ -109,6 +111,7 @@ export default function SharedErrorPage() {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
+      toast.success("Link copied to clipboard!");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       const textArea = document.createElement("textarea");
@@ -118,11 +121,32 @@ export default function SharedErrorPage() {
       try {
         document.execCommand("copy");
         setCopied(true);
+        toast.success("Link copied to clipboard!");
         setTimeout(() => setCopied(false), 2000);
       } catch (fallbackErr) {
         console.error("Copy failed:", fallbackErr);
+        toast.error("Failed to copy link");
       }
       document.body.removeChild(textArea);
+    }
+  };
+
+  const handleVote = async (voteType) => {
+    if (votingLoading) return;
+
+    setVotingLoading(true);
+    try {
+      const { voteSolution } = await import("@/services/apiService");
+      const votes = await voteSolution(params.sharedId, voteType);
+
+      setUserVote(voteType);
+      setVoteStats(votes);
+      toast.success("Thank you for your feedback!");
+    } catch (err) {
+      console.error("Vote failed:", err);
+      toast.error(err.message || "Failed to record vote");
+    } finally {
+      setVotingLoading(false);
     }
   };
 
@@ -207,35 +231,6 @@ export default function SharedErrorPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
-
-  const handleVote = async (solutionIndex, voteType) => {
-    try {
-      const { voteSolution } = await import("@/services/apiService");
-
-      const votes = await voteSolution({
-        shareId: params.sharedId,
-        solutionIndex,
-        voteType,
-      });
-
-      // Update local state
-      setUserVotes((prev) => ({
-        ...prev,
-        [solutionIndex]: voteType,
-      }));
-
-      // Update vote stats
-      setVoteStats((prev) => ({
-        ...prev,
-        [solutionIndex]: votes,
-      }));
-
-      toast.success("Vote recorded!");
-    } catch (err) {
-      console.error("Vote failed:", err);
-      toast.error(err.message || "Failed to record vote");
-    }
-  };
 
   if (loading)
     return (
@@ -379,96 +374,86 @@ export default function SharedErrorPage() {
   };
 
   const VotingSection = () => {
-    if (!data?.analysis?.solutions?.length) return null;
-
     return (
       <div
         className={`p-4 rounded-xl border ${
           theme === "dark"
-            ? "bg-green-900/20 border-green-700"
-            : "bg-green-50 border-green-200"
+            ? "bg-blue-900/20 border-blue-700"
+            : "bg-blue-50 border-blue-200"
         }`}
       >
         <h3
           className={`text-sm font-semibold mb-3 flex items-center gap-2 ${
-            theme === "dark" ? "text-green-300" : "text-green-800"
+            theme === "dark" ? "text-blue-300" : "text-blue-800"
           }`}
         >
-          <span className="text-lg">🗳️</span>
-          Was this helpful?
+          <span className="text-lg">💬</span>
+          Was this analysis helpful?
         </h3>
 
-        <div className="space-y-3">
-          {data.analysis.solutions.map((solution, i) => {
-            const voteData = voteStats[i];
-            const hasVoted = userVotes[i];
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => handleVote("helpful")}
+            disabled={votingLoading}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition cursor-pointer font-medium text-sm ${
+              userVote === "helpful"
+                ? theme === "dark"
+                  ? "bg-green-700 text-green-100 border-2 border-green-500"
+                  : "bg-green-600 text-white border-2 border-green-500"
+                : theme === "dark"
+                ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border-2 border-gray-600"
+                : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300"
+            } ${votingLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            <ThumbsUp className="w-4 h-4" />
+            <span>Helpful</span>
+            {voteStats?.helpful > 0 && (
+              <span className="ml-1 font-bold">({voteStats.helpful})</span>
+            )}
+          </button>
 
-            return (
-              <div
-                key={i}
-                className={`p-2.5 rounded-lg border ${
-                  theme === "dark"
-                    ? "bg-gray-800/50 border-gray-600"
-                    : "bg-white border-gray-200"
-                }`}
-              >
-                <div
-                  className={`text-xs font-medium mb-2 ${
-                    theme === "dark" ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Solution {i + 1}
-                </div>
+          <button
+            onClick={() => handleVote("not_helpful")}
+            disabled={votingLoading}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition cursor-pointer font-medium text-sm ${
+              userVote === "not_helpful"
+                ? theme === "dark"
+                  ? "bg-red-700 text-red-100 border-2 border-red-500"
+                  : "bg-red-600 text-white border-2 border-red-500"
+                : theme === "dark"
+                ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border-2 border-gray-600"
+                : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300"
+            } ${votingLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            <ThumbsDown className="w-4 h-4" />
+            <span>Not Helpful</span>
+            {voteStats?.notHelpful > 0 && (
+              <span className="ml-1 font-bold">({voteStats.notHelpful})</span>
+            )}
+          </button>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => handleVote(i, "helpful")}
-                    disabled={false}
-                    className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition cursor-pointer font-medium ${
-                      hasVoted === "helpful"
-                        ? theme === "dark"
-                          ? "bg-green-700 text-green-100 border border-green-600"
-                          : "bg-green-200 text-green-800 border border-green-400"
-                        : theme === "dark"
-                        ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
-                    }`}
-                  >
-                    👍 Helpful{" "}
-                    {voteData?.helpful > 0 && `(${voteData.helpful})`}
-                  </button>
-
-                  <button
-                    onClick={() => handleVote(i, "not_helpful")}
-                    disabled={false}
-                    className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition cursor-pointer font-medium ${
-                      hasVoted === "not_helpful"
-                        ? theme === "dark"
-                          ? "bg-red-700 text-red-100 border border-red-600"
-                          : "bg-red-200 text-red-800 border border-red-400"
-                        : theme === "dark"
-                        ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
-                    }`}
-                  >
-                    👎 Not Helpful
-                    {voteData?.notHelpful > 0 && `(${voteData.notHelpful})`}
-                  </button>
-
-                  {voteData?.total > 0 && (
-                    <span
-                      className={`text-xs font-medium ml-auto ${
-                        theme === "dark" ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      {voteData.percentage}% helpful ({voteData.total})
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {voteStats?.total > 0 && (
+            <div
+              className={`ml-auto text-sm font-medium ${
+                theme === "dark" ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              <span className="text-lg font-bold">{voteStats.percentage}%</span>{" "}
+              found helpful ({voteStats.total}{" "}
+              {voteStats.total === 1 ? "vote" : "votes"})
+            </div>
+          )}
         </div>
+
+        {userVote && (
+          <p
+            className={`text-xs mt-3 ${
+              theme === "dark" ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            ✓ Thank you for your feedback! You can change your vote anytime.
+          </p>
+        )}
       </div>
     );
   };
@@ -614,7 +599,6 @@ export default function SharedErrorPage() {
 
               <VotingSection />
 
-              
               <div
                 className={`flex flex-col sm:flex-row gap-3 pt-4 border-t justify-center ${
                   theme === "dark" ? "border-gray-600" : "border-gray-200"
