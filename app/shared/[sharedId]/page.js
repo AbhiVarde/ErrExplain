@@ -383,7 +383,7 @@ export default function SharedErrorPage() {
         }`}
       >
         <h3
-          className={`text-sm font-semibold mb-3 flex items-center gap-2 ${
+          className={`text-sm font-medium mb-3 flex items-center gap-2 ${
             theme === "dark" ? "text-blue-300" : "text-blue-800"
           }`}
         >
@@ -395,7 +395,7 @@ export default function SharedErrorPage() {
           <button
             onClick={() => handleVote("helpful")}
             disabled={votingLoading}
-            className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] ${
+            className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl ${
               userVote === "helpful"
                 ? theme === "dark"
                   ? "bg-green-700 text-green-100 border-green-500"
@@ -408,14 +408,14 @@ export default function SharedErrorPage() {
             <ThumbsUp className="w-4 h-4" />
             <span>Helpful</span>
             {voteStats?.helpful > 0 && (
-              <span className="ml-1 font-semibold">({voteStats.helpful})</span>
+              <span className="ml-1 font-medium">({voteStats.helpful})</span>
             )}
           </button>
 
           <button
             onClick={() => handleVote("not_helpful")}
             disabled={votingLoading}
-            className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] ${
+            className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl ${
               userVote === "not_helpful"
                 ? theme === "dark"
                   ? "bg-red-700 text-red-100 border-red-500"
@@ -428,9 +428,7 @@ export default function SharedErrorPage() {
             <ThumbsDown className="w-4 h-4" />
             <span>Not Helpful</span>
             {voteStats?.notHelpful > 0 && (
-              <span className="ml-1 font-semibold">
-                ({voteStats.notHelpful})
-              </span>
+              <span className="ml-1 font-medium">({voteStats.notHelpful})</span>
             )}
           </button>
 
@@ -440,7 +438,9 @@ export default function SharedErrorPage() {
                 theme === "dark" ? "text-gray-300" : "text-gray-600"
               }`}
             >
-              <span className="text-lg font-bold">{voteStats.percentage}%</span>{" "}
+              <span className="text-lg font-medium">
+                {voteStats.percentage}%
+              </span>{" "}
               found helpful ({voteStats.total}{" "}
               {voteStats.total === 1 ? "vote" : "votes"})
             </div>
