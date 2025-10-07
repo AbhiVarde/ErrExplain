@@ -168,8 +168,6 @@ export default function HistoryDashboard({ onSelectError }) {
 
       setHistory((prev) => prev.filter((item) => item.id !== historyId));
       toast.success("Error analysis deleted");
-
-      window.location.reload();
     } catch (err) {
       console.error("Error deleting history item:", err);
       toast.error(err.message || "Failed to delete analysis");
