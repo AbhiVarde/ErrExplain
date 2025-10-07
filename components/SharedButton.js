@@ -16,7 +16,7 @@ export default function ShareButton({
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState(
     isShared && existingShareId
-      ? `${window.location.origin}shared/${existingShareId}`
+      ? `${window.location.origin}/shared/${existingShareId}`
       : null
   );
   const [copied, setCopied] = useState(false);
@@ -44,7 +44,7 @@ export default function ShareButton({
           isShared: true,
         });
 
-        await copyToClipboard(newShareUrl, true); 
+        await copyToClipboard(newShareUrl, true);
       } else {
         toast.error("Failed to create share link");
       }
