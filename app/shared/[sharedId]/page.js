@@ -395,40 +395,42 @@ export default function SharedErrorPage() {
           <button
             onClick={() => handleVote("helpful")}
             disabled={votingLoading}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition cursor-pointer font-medium text-sm ${
+            className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] ${
               userVote === "helpful"
                 ? theme === "dark"
-                  ? "bg-green-700 text-green-100 border-2 border-green-500"
-                  : "bg-green-600 text-white border-2 border-green-500"
+                  ? "bg-green-700 text-green-100 border-green-500"
+                  : "bg-green-600 text-white border-green-500"
                 : theme === "dark"
-                ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border-2 border-gray-600"
-                : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300"
+                ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+                : "border-gray-300 hover:bg-gray-50 text-gray-700"
             } ${votingLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <ThumbsUp className="w-4 h-4" />
             <span>Helpful</span>
             {voteStats?.helpful > 0 && (
-              <span className="ml-1 font-bold">({voteStats.helpful})</span>
+              <span className="ml-1 font-semibold">({voteStats.helpful})</span>
             )}
           </button>
 
           <button
             onClick={() => handleVote("not_helpful")}
             disabled={votingLoading}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition cursor-pointer font-medium text-sm ${
+            className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] ${
               userVote === "not_helpful"
                 ? theme === "dark"
-                  ? "bg-red-700 text-red-100 border-2 border-red-500"
-                  : "bg-red-600 text-white border-2 border-red-500"
+                  ? "bg-red-700 text-red-100 border-red-500"
+                  : "bg-red-600 text-white border-red-500"
                 : theme === "dark"
-                ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border-2 border-gray-600"
-                : "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300"
+                ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+                : "border-gray-300 hover:bg-gray-50 text-gray-700"
             } ${votingLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <ThumbsDown className="w-4 h-4" />
             <span>Not Helpful</span>
             {voteStats?.notHelpful > 0 && (
-              <span className="ml-1 font-bold">({voteStats.notHelpful})</span>
+              <span className="ml-1 font-semibold">
+                ({voteStats.notHelpful})
+              </span>
             )}
           </button>
 
