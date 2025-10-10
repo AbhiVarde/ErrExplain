@@ -4,56 +4,59 @@
 
 **Turn cryptic errors into plain English.**
 
-Instantly analyze programming errors with AI-powered explanations, root cause analysis, and actionable solutions.
+Instantly analyze programming errors with AI-powered explanations, root cause detection, and actionable solutions.
 
 <img width="1200" height="630" alt="og-image" src="./public/og-image.png" />
 
-## 🛠️ Key Features
+## 🎯 Problem
 
-- **🔍 Smart Error Analysis** - Paste any error message and get structured explanations
-- **🎯 Root Cause Detection** - Understand what actually caused the error
-- **🛠️ Actionable Solutions** - Step-by-step fixes that actually work
-- **💻 AI-Generated Minimal Code** - Reproduce the exact error with minimal example code
-- **🗑️ Delete Errors from History** - Remove unwanted entries from your personal dashboard
-- **🔐 Privacy Controls & Auto-Moderation** - Strip API keys, passwords, and other secrets; optionally mark entries private
-- **🌙 Full Dark Theme** - Dark/light mode support throughout the app
-- **💬 Voting System** - Users can vote helpful/not helpful on solutions
-- **🔗 Collaborative Sharing** - Generate shareable links for team debugging
-- **📊 Error History** - Track and analyze your debugging patterns with charts
-- **⚡ Rate Limiting** - Fair usage with 5 free analyses per day
-- **📱 Mobile Friendly** - Works seamlessly across all devices
+Debugging cryptic programming errors is slow and frustrating. Traditional tools like Stack Overflow or general AI chatbots often provide incomplete or unstructured answers. **ErrExplain** fills this gap by providing structured explanations, actionable solutions, and minimal reproducible code for errors across multiple languages.
 
-## 🤔 Why ErrExplain?
+## ✨ Key Features
 
-| Feature                   | ErrExplain                          | ChatGPT/Claude                 | Stack Overflow           |
-| ------------------------- | ----------------------------------- | ------------------------------ | ------------------------ |
-| **Error Focus**           | ✅ Specialized for errors           | ❌ General purpose             | ❌ Manual search         |
-| **Structured Output**     | ✅ Meaning → Causes → Fixes         | ❌ Raw text response           | ❌ Mixed quality answers |
-| **Memory & Analytics**    | ✅ Dashboard with charts & insights | ❌ Limited conversation memory | ❌ No personal dashboard |
-| **Language Intelligence** | ✅ Top languages, severity tracking | ❌ No pattern recognition      | ❌ No personal insights  |
+- 🔍 **Smart Error Analysis** – Paste any error message and get structured explanations
+- 🎯 **Root Cause Detection** – Understand the actual cause of the error
+- 🛠️ **Actionable Solutions** – Step-by-step fixes that work
+- 💻 **AI-Generated Minimal Code** – Reproduce the exact error with minimal example code
+- 🗑️ **Delete Errors from History** – Remove unwanted entries from your dashboard
+- 🔐 **Privacy Controls & Auto-Moderation** – Strip API keys, passwords, and optionally mark entries private
+- 🌙 **Dark/Light Theme** – Seamless dark mode support
+- 💬 **Voting System** – Vote on solutions as helpful or not helpful
+- 🔗 **Collaborative Sharing** – Generate shareable links for team debugging
+- 📊 **Error History** – Track and analyze debugging patterns with charts
+- ⚡ **Rate Limiting** – 5 free analyses per day
+- 📱 **Mobile Friendly** – Works on all devices
 
-## 🚀 Tech Stack
+## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 15+, React 19, Tailwind CSS 4, clsx
-- **Backend**: Appwrite Functions, Next.js API Routes, Node.js, node-appwrite
-- **Database**: Appwrite Database
-- **AI**: Groq (Llama 4 Maverick)
-- **Vercel AI SDK**: ai, @ai-sdk/groq
-- **Validation**: Zod
-- **UI**: Sonner (toasts)
-- **Charts**: Recharts
-- **Icons**: Lucide React
-- **Deployment**: Appwrite Sites
+- **Frontend:** Next.js 15+, React 19, Tailwind CSS 4, clsx
+- **Backend:** Appwrite Functions, Next.js API Routes, Node.js, node-appwrite
+- **Database:** Appwrite Database
+- **AI:** Groq (Llama 4 Maverick)
+- **Vercel AI SDK:** ai, @ai-sdk/groq
+- **Validation:** Zod
+- **UI:** Sonner (toasts)
+- **Charts:** Recharts
+- **Icons:** Lucide React
+- **Deployment:** Appwrite Sites
 
-## Getting Started
+## 🚀 How It Works
+
+1. **Paste** your error message
+2. **Analyze** – ErrExplain provides explanation, root causes, and solutions
+3. **Reproduce** – Generate minimal example code for the error
+4. **Track** – Save and analyze your error history in your dashboard
+5. **Share** – Generate shareable links for collaboration
+
+## 📦 Installation & Setup
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+
 - Appwrite account and project
 - Groq API key
 
-### Quick Start
+### Local Development
 
 ```bash
 # Clone repository
@@ -63,7 +66,7 @@ cd errexplain
 # Install dependencies
 npm install
 
-# Setup environment
+# Set up environment variables
 cp .env.example .env.local
 # Edit .env.local with your credentials
 
@@ -71,11 +74,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and start analyzing errors.
+Open [http://localhost:3000](http://localhost:3000) to start analyzing errors.
 
-### Environment Configuration
-
-Create `.env.local` with these variables:
+### Environment Variables
 
 ```env
 # Appwrite
@@ -86,18 +87,18 @@ NEXT_PUBLIC_APPWRITE_DATABASE_ID=your_database_id
 NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID=your_collection_id
 ```
 
-**Appwrite Collections Setup:**
+### Appwrite Setup
 
-- **error-submissions**: `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`, `exampleCode`, `isPrivate`
+#### 🏗️ Collections
 
-- **daily-usage**: `clientId`, `date`, `usageCount`
-
-- **solution-votes**: `shareId`, `solutionIndex`, `voteType`, `userFingerprint`
+- **error-submissions** – `clientId`, `errorMessage`, `language`, `explanation`, `causes`, `solutions`, `category`, `severity`, `isShared`, `shareId`, `sharedAt`, `exampleCode`, `isPrivate`
+- **daily-usage** – `clientId`, `date`, `usageCount`
+- **solution-votes** – `shareId`, `solutionIndex`, `voteType`, `userFingerprint`
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit changes (`git commit -m 'feat: add amazing feature'`)
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
@@ -113,25 +114,11 @@ NEXT_PUBLIC_APPWRITE_ERROR_SUBMISSIONS_COLLECTION_ID=your_collection_id
 
 **Love ErrExplain? Help me keep building!**
 
-💚 **$5 / month - Monthly Supporter**  
-Get recognition in the GitHub README under Supporters.
-
-🌟 **$19 / month - Monthly Sponsor**  
-Support growth and get recognition both in the GitHub README **and** on my portfolio (abhivarde.in).
-
-🚀 **$49 / month - Featured Sponsor**  
-Premium support with **extra visibility**: README + Portfolio + **promotion on Sync UI**.
+- 💚 **$5 / month – Monthly Supporter** → Recognition in GitHub README
+- 🌟 **$19 / month – Monthly Sponsor** → README + Portfolio recognition
+- 🚀 **$49 / month – Featured Sponsor** → README + Portfolio + promotion on Sync UI
 
 [👉 Become a Sponsor](https://github.com/sponsors/AbhiVarde)
-
-## 🌩️ Appwrite Cloud Beta
-
-Proud to be a part of the **Appwrite Cloud Public Beta**!  
-Click the card to view it live:
-
-<a href="https://cloud.appwrite.io/card/653e053411ff36b703e7" target="_blank">
-  <img width="350" src="https://cloud.appwrite.io/v1/cards/cloud?userId=653e053411ff36b703e7" alt="Appwrite Cloud Card" />
-</a>
 
 ## License
 
@@ -139,4 +126,8 @@ ErrExplain is licensed under the [MIT License](http://choosealicense.com/license
 
 ## Authors
 
-ErrExplain is created and maintained by [Abhi Varde](https://www.abhivarde.in/).
+ErrExplain is created and maintained by [Abhi Varde](https://www.abhivarde.in/)
+
+---
+
+⭐ **Found this helpful? Give it a star!**
