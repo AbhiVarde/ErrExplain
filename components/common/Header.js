@@ -63,7 +63,7 @@ export default function Header() {
             >
               Sendra
             </a>{" "}
-            (Resend MCP hackathon project – Appwrite + Resend + Vercel)
+            (Resend MCP hackathon project – Appwrite + Resend + AiSDK + Vercel)
           </span>
         </div>
       </div>
