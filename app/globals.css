@@ -1,20 +1,19 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap");
 
+/* Light theme (default) */
 :root {
-  /* Light theme (default) */
-  --background: #E6F0EDCC;
-  --primary-bg: #0E2E28;
-  --primary-text: #CDFA8A;
+  --background: #e6f0edcc;
+  --primary-bg: #0e2e28;
+  --primary-text: #cdfa8a;
   --text-primary: #000000;
   --surface-white: #ffffff;
 }
 
+/* Dark theme */
 [data-theme="dark"] {
-  /* Dark theme */
   --background: #1a1a1a;
-  --primary-bg: #CDFA8A;
-  --primary-text: #0E2E28;
+  --primary-bg: #cdfa8a;
+  --primary-text: #0e2e28;
   --text-primary: #ffffff;
   --surface-white: #2d2d2d;
 }
@@ -35,14 +34,18 @@ body {
 }
 
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: var(--background);
-  background-image: radial-gradient(circle, rgba(14, 46, 40, 0.19) 1px, transparent 1px);
+  background-image: radial-gradient(
+    circle,
+    rgba(14, 46, 40, 0.19) 1px,
+    transparent 1px
+  );
   background-size: 20px 20px;
   z-index: -1;
   pointer-events: none;
@@ -51,7 +54,11 @@ body::before {
 
 [data-theme="dark"] body::before {
   background: var(--background);
-  background-image: radial-gradient(circle, rgba(205, 250, 138, 0.19) 1px, transparent 1px);
+  background-image: radial-gradient(
+    circle,
+    rgba(205, 250, 138, 0.19) 1px,
+    transparent 1px
+  );
   background-size: 20px 20px;
 }
 

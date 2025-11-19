@@ -51,6 +51,10 @@ export default function RootLayout({ children }) {
           href="./favicon.ico"
           sizes="32x32"
         />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <meta name="description" content={metadata.description} />
         <meta name="robots" content={metadata.robots} />
         <meta name="twitter:card" content={metadata.twitter.card} />

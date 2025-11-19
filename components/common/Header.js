@@ -33,7 +33,7 @@ export default function Header() {
             >
               Sync UI
             </a>{" "}
-            (75+ GitHub stars, used in 70+ countries)
+            (85+ GitHub stars, used in 90+ countries)
           </span>
 
           <span className="mx-4">
