@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function GoBackButton({ className }) {
   const { theme } = useTheme();

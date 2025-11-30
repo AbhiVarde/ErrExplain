@@ -18,8 +18,10 @@ import {
   Check,
   ThumbsUp,
   ThumbsDown,
+  QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
+import QRDialog from "@/components/dialog/QRDialog";
 
 const accordionItems = [
   {
@@ -62,6 +64,7 @@ export default function SharedErrorPage() {
   const [voteStats, setVoteStats] = useState(null);
   const [userVote, setUserVote] = useState(null);
   const [votingLoading, setVotingLoading] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchSharedError = async () => {
@@ -461,193 +464,221 @@ export default function SharedErrorPage() {
   };
 
   return (
-    <div className="px-4 py-10">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-4">
-          <h1
-            className={`text-2xl lg:text-3xl font-semibold tracking-wide mb-2 ${
-              theme === "dark" ? "text-white" : "text-[#0E2E28]"
+    <>
+      <div className="px-4 py-10">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-4">
+            <h1
+              className={`text-2xl lg:text-3xl font-semibold tracking-wide mb-2 ${
+                theme === "dark" ? "text-white" : "text-[#0E2E28]"
+              }`}
+            >
+              Shared Error Analysis
+            </h1>
+            <p
+              className={`text-sm sm:text-base leading-relaxed tracking-wide max-w-2xl mx-auto ${
+                theme === "dark" ? "text-white/70" : "text-[#0E2E28]/70"
+              }`}
+            >
+              Collaborative debugging session
+            </p>
+          </div>
+
+          <div
+            className={`backdrop-blur-md rounded-2xl border shadow-lg overflow-hidden ${
+              theme === "dark" ? "border-gray-600" : "border-gray-200"
             }`}
           >
-            Shared Error Analysis
-          </h1>
-          <p
-            className={`text-sm sm:text-base leading-relaxed tracking-wide max-w-2xl mx-auto ${
-              theme === "dark" ? "text-white/70" : "text-[#0E2E28]/70"
-            }`}
-          >
-            Collaborative debugging session
-          </p>
-        </div>
-
-        <div
-          className={`backdrop-blur-md rounded-2xl border shadow-lg overflow-hidden ${
-            theme === "dark" ? "border-gray-600" : "border-gray-200"
-          }`}
-        >
-          <div className="p-4 md:p-6">
-            <div className="space-y-6">
-              <div
-                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border ${
-                  theme === "dark"
-                    ? "bg-gray-800/60 border-gray-600"
-                    : "bg-white/60 border-[#e6e6e6]"
-                }`}
-              >
-                <div>
-                  <div
-                    className={`flex items-center gap-2 text-sm mb-2 ${
-                      theme === "dark" ? "text-white/70" : "text-[#0E2E28]/70"
-                    }`}
-                  >
-                    <FileCode2 className="w-4 h-4" />
-                    <span>{data.language}</span> • <span>{data.category}</span>
-                  </div>
-                  <div
-                    className={`flex items-center gap-2 text-xs ${
-                      theme === "dark" ? "text-white/50" : "text-[#0E2E28]/50"
-                    }`}
-                  >
-                    <Clock className="w-3 h-3" />
-                    <span>{formatDate(data.timestamp)}</span>
-                  </div>
-                </div>
-                <span
-                  className={`px-3 py-1 rounded-full border text-sm font-medium ${getSeverityColor(
-                    data.severity
-                  )}`}
-                >
-                  {data.severity} severity
-                </span>
-              </div>
-
-              <div
-                className={`p-4 rounded-xl border ${
-                  theme === "dark"
-                    ? "bg-gray-800/50 border-gray-600"
-                    : "bg-gray-50 border-gray-200"
-                }`}
-              >
-                <h3
-                  className={`text-sm font-medium mb-2 ${
-                    theme === "dark" ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Error Message:
-                </h3>
-                <pre
-                  className={`text-sm font-mono p-3 rounded border overflow-x-auto whitespace-pre-wrap ${
+            <div className="p-4 md:p-6">
+              <div className="space-y-6">
+                <div
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border ${
                     theme === "dark"
-                      ? "text-gray-300 bg-gray-900 border-gray-600"
-                      : "text-gray-700 bg-white border-gray-300"
+                      ? "bg-gray-800/60 border-gray-600"
+                      : "bg-white/60 border-[#e6e6e6]"
                   }`}
                 >
-                  {data.errorMessage}
-                </pre>
-              </div>
-
-              <div className="space-y-4">
-                {accordionItems.map((item) => {
-                  const isOpen = openAccordions.has(item.id);
-                  const hasContent = renderAccordionContent(item);
-                  if (!hasContent) return null;
-                  return (
+                  <div>
                     <div
-                      key={item.id}
-                      className={`rounded-xl border transition ${getAccordionColor(
-                        item.color,
-                        isOpen
-                      )}`}
+                      className={`flex items-center gap-2 text-sm mb-2 ${
+                        theme === "dark" ? "text-white/70" : "text-[#0E2E28]/70"
+                      }`}
                     >
-                      <button
-                        onClick={() => toggleAccordion(item.id)}
-                        className="w-full p-2.5 cursor-pointer flex items-center justify-between text-left rounded-xl hover:bg-black/5 transition"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`p-1.5 rounded-lg shadow-sm ${getIconColor(
-                              item.color
-                            )} ${
-                              theme === "dark" ? "bg-gray-700" : "bg-white"
-                            }`}
-                          >
-                            <item.icon className="w-4 h-4" />
-                          </div>
-                          <h3
-                            className={`font-medium ${
-                              theme === "dark" ? "text-white" : "text-gray-900"
-                            }`}
-                          >
-                            {item.title}
-                          </h3>
-                        </div>
-                        <ChevronDown
-                          className={`w-5 h-5 transition-transform ${
-                            theme === "dark" ? "text-gray-500" : "text-gray-400"
-                          } ${isOpen ? "rotate-180" : ""}`}
-                        />
-                      </button>
-                      {isOpen && (
-                        <div className="px-4 pb-4">
-                          <div className="py-3">
-                            {renderAccordionContent(item)}
-                          </div>
-                        </div>
-                      )}
+                      <FileCode2 className="w-4 h-4" />
+                      <span>{data.language}</span> •{" "}
+                      <span>{data.category}</span>
                     </div>
-                  );
-                })}
-              </div>
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        theme === "dark" ? "text-white/50" : "text-[#0E2E28]/50"
+                      }`}
+                    >
+                      <Clock className="w-3 h-3" />
+                      <span>{formatDate(data.timestamp)}</span>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full border text-sm font-medium ${getSeverityColor(
+                      data.severity
+                    )}`}
+                  >
+                    {data.severity} severity
+                  </span>
+                </div>
 
-              <VotingSection />
-
-              <div
-                className={`flex flex-col sm:flex-row gap-3 pt-4 border-t justify-center ${
-                  theme === "dark" ? "border-gray-600" : "border-gray-200"
-                }`}
-              >
-                <Link
-                  href="/"
-                  className="bg-[#CDFA8A] hover:bg-[#B8E678] cursor-pointer text-[#0E2E28] font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 text-sm transition transform hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Analyze Your Own Errors
-                </Link>
-                <button
-                  onClick={copyToClipboard}
-                  className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl transition ${
+                <div
+                  className={`p-4 rounded-xl border ${
                     theme === "dark"
-                      ? "border-gray-600 hover:bg-gray-700 text-gray-300"
-                      : "border-gray-300 hover:bg-gray-50 text-gray-700"
+                      ? "bg-gray-800/50 border-gray-600"
+                      : "bg-gray-50 border-gray-200"
                   }`}
                 >
-                  {copied ? (
-                    <>
-                      <Check
-                        className={`w-4 h-4 ${
-                          theme === "dark" ? "text-green-400" : "text-green-600"
-                        }`}
-                      />
-                      <span
-                        className={
-                          theme === "dark" ? "text-green-400" : "text-green-600"
-                        }
+                  <h3
+                    className={`text-sm font-medium mb-2 ${
+                      theme === "dark" ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    Error Message:
+                  </h3>
+                  <pre
+                    className={`text-sm font-mono p-3 rounded border overflow-x-auto whitespace-pre-wrap ${
+                      theme === "dark"
+                        ? "text-gray-300 bg-gray-900 border-gray-600"
+                        : "text-gray-700 bg-white border-gray-300"
+                    }`}
+                  >
+                    {data.errorMessage}
+                  </pre>
+                </div>
+
+                <div className="space-y-4">
+                  {accordionItems.map((item) => {
+                    const isOpen = openAccordions.has(item.id);
+                    const hasContent = renderAccordionContent(item);
+                    if (!hasContent) return null;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`rounded-xl border transition ${getAccordionColor(
+                          item.color,
+                          isOpen
+                        )}`}
                       >
-                        Copied!
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Copy Link
-                    </>
-                  )}
-                </button>
+                        <button
+                          onClick={() => toggleAccordion(item.id)}
+                          className="w-full p-2.5 cursor-pointer flex items-center justify-between text-left rounded-xl hover:bg-black/5 transition"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`p-1.5 rounded-lg shadow-sm ${getIconColor(
+                                item.color
+                              )} ${
+                                theme === "dark" ? "bg-gray-700" : "bg-white"
+                              }`}
+                            >
+                              <item.icon className="w-4 h-4" />
+                            </div>
+                            <h3
+                              className={`font-medium ${
+                                theme === "dark"
+                                  ? "text-white"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {item.title}
+                            </h3>
+                          </div>
+                          <ChevronDown
+                            className={`w-5 h-5 transition-transform ${
+                              theme === "dark"
+                                ? "text-gray-500"
+                                : "text-gray-400"
+                            } ${isOpen ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {isOpen && (
+                          <div className="px-4 pb-4">
+                            <div className="py-3">
+                              {renderAccordionContent(item)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <VotingSection />
+
+                <div
+                  className={`flex flex-col sm:flex-row gap-3 pt-4 border-t justify-center ${
+                    theme === "dark" ? "border-gray-600" : "border-gray-200"
+                  }`}
+                >
+                  <Link
+                    href="/"
+                    className="bg-[#CDFA8A] hover:bg-[#B8E678] cursor-pointer text-[#0E2E28] font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 text-sm transition transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Analyze Your Own Errors
+                  </Link>
+                  <button
+                    onClick={copyToClipboard}
+                    className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl transition ${
+                      theme === "dark"
+                        ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+                        : "border-gray-300 hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    {copied ? (
+                      <>
+                        <Check
+                          className={`w-4 h-4 ${
+                            theme === "dark"
+                              ? "text-green-400"
+                              : "text-green-600"
+                          }`}
+                        />
+                        <span
+                          className={
+                            theme === "dark"
+                              ? "text-green-400"
+                              : "text-green-600"
+                          }
+                        >
+                          Copied!
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copy Link
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setQrDialogOpen(true)}
+                    className={`flex items-center justify-center gap-2 cursor-pointer px-4 py-2 text-sm font-medium border rounded-xl transition ${
+                      theme === "dark"
+                        ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+                        : "border-gray-300 hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    <QrCode className="w-4 h-4" />
+                    Show QR
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <QRDialog
+        isOpen={qrDialogOpen}
+        onClose={() => setQrDialogOpen(false)}
+        url={typeof window !== "undefined" ? window.location.href : ""}
+      />
+    </>
   );
 }

@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { useTheme } from "../contexts/ThemeContext";
-import { Share2, Copy, Check, Loader2, ExternalLink } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import {
+  Share2,
+  Copy,
+  Check,
+  Loader2,
+  ExternalLink,
+  QrCode,
+} from "lucide-react";
 import { toast } from "sonner";
 import { shareError } from "@/services/apiService";
 
@@ -11,6 +18,7 @@ export default function ShareButton({
   existingShareId = null,
   isPrivate = false,
   onShareComplete,
+  onShowQR,
 }) {
   const { theme } = useTheme();
   const [isSharing, setIsSharing] = useState(false);
@@ -60,7 +68,6 @@ export default function ShareButton({
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // fallback copy
       const textArea = document.createElement("textarea");
       textArea.value = text;
       document.body.appendChild(textArea);
@@ -88,7 +95,12 @@ export default function ShareButton({
 
   const openInNewTab = () => shareUrl && window.open(shareUrl, "_blank");
 
-  // Already shared → show copy + open
+  const handleOpenQR = () => {
+    if (shareUrl && onShowQR) {
+      onShowQR(shareUrl);
+    }
+  };
+
   if (shareUrl) {
     if (variant === "icon") {
       return (
@@ -125,6 +137,18 @@ export default function ShareButton({
             title="Open in new tab"
           >
             <ExternalLink className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={handleOpenQR}
+            className={`p-1.5 cursor-pointer rounded transition ${
+              theme === "dark"
+                ? "hover:bg-gray-700 text-gray-400"
+                : "hover:bg-gray-200 text-gray-600"
+            }`}
+            title="Show QR Code"
+          >
+            <QrCode className="w-4 h-4" />
           </button>
         </div>
       );
@@ -173,11 +197,21 @@ export default function ShareButton({
         >
           <ExternalLink className="w-4 h-4" />
         </button>
+
+        <button
+          onClick={handleOpenQR}
+          className={`px-3 py-2 border cursor-pointer rounded-xl transition ${
+            theme === "dark"
+              ? "border-gray-600 hover:bg-gray-700 text-gray-300"
+              : "border-gray-300 hover:bg-gray-50 text-gray-700"
+          }`}
+        >
+          <QrCode className="w-4 h-4" />
+        </button>
       </div>
     );
   }
 
-  // Not yet shared → show share button
   return variant === "icon" ? (
     <button
       onClick={handleShare}

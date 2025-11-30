@@ -2,7 +2,7 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import Link from "next/link";
 import { Home, AlertTriangle } from "lucide-react";
-import GoBackButton from "../GoBackButton";
+import GoBackButton from "../buttons/GoBackButton";
 
 export default function NotFoundClient() {
   const { theme } = useTheme();

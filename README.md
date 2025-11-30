@@ -35,7 +35,7 @@ Debugging cryptic programming errors is slow and frustrating. Traditional tools 
 - **AI:** Groq (Llama 4 Maverick)
 - **Vercel AI SDK:** ai, @ai-sdk/groq
 - **Validation:** Zod
-- **UI:** Sonner (toasts)
+- **UI / UX:** Sonner (toasts), Appwrite Avatars (QR codes)
 - **Charts:** Recharts
 - **Icons:** Lucide React
 - **Deployment:** Appwrite Sites

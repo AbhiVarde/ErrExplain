@@ -28,7 +28,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import ShareButton from "./SharedButton";
+import ShareButton from "./buttons/SharedButton";
 import { toast } from "sonner";
 import { getUserHistory, deleteHistoryItem } from "@/services/apiService";
 
@@ -65,7 +65,7 @@ const SEVERITY_CONFIG = {
   },
 };
 
-export default function HistoryDashboard({ onSelectError }) {
+export default function HistoryDashboard({ onSelectError, onShowQR }) {
   const { theme } = useTheme();
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState({
@@ -735,6 +735,7 @@ export default function HistoryDashboard({ onSelectError }) {
                           isShared={item.isShared}
                           existingShareId={item.shareId}
                           isPrivate={item.isPrivate}
+                          onShowQR={onShowQR}
                           className="p-1.5 sm:p-1"
                         />
                       )}
