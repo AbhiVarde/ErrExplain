@@ -13,10 +13,10 @@
     "appwrite": "^18.2.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.541.0",
-    "next": "^16.0.3",
+    "next": "^16.0.7",
     "node-appwrite": "^18.0.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "^19.1.2",
+    "react-dom": "^19.1.2",
     "recharts": "^3.1.2",
     "sonner": "^2.0.7",
     "zod": "^4.1.3"
